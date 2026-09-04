@@ -9,10 +9,12 @@ document.addEventListener('DOMContentLoaded', () => {
         // Toggle menu on button click
         menuToggle.addEventListener('click', () => {
             const isExpanded = menuToggle.getAttribute('aria-expanded') === 'true';
-            menuToggle.setAttribute('aria-expanded', !isExpanded);
-            menuToggle.classList.toggle('active');
-            mainNav.classList.toggle('active');
-            document.body.style.overflow = isExpanded ? 'auto' : 'hidden'; // Evita scroll do body
+            const nextState = !isExpanded;
+            menuToggle.setAttribute('aria-expanded', String(nextState));
+            menuToggle.setAttribute('aria-label', nextState ? 'Fechar menu de navegação' : 'Abrir menu de navegação');
+            menuToggle.classList.toggle('active', nextState);
+            mainNav.classList.toggle('active', nextState);
+            document.body.style.overflow = nextState ? 'hidden' : '';
         });
 
         // Close menu on link click
@@ -40,9 +42,10 @@ document.addEventListener('DOMContentLoaded', () => {
     function closeMenu() {
         if(menuToggle && mainNav) {
             menuToggle.setAttribute('aria-expanded', 'false');
+            menuToggle.setAttribute('aria-label', 'Abrir menu de navegação');
             menuToggle.classList.remove('active');
             mainNav.classList.remove('active');
-            document.body.style.overflow = 'auto';
+            document.body.style.overflow = '';
         }
     }
 
@@ -224,4 +227,5 @@ document.addEventListener('DOMContentLoaded', () => {
     if (yearSpan) {
         yearSpan.textContent = new Date().getFullYear();
     }
+
 });
