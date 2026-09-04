@@ -158,7 +158,68 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 7. ATUALIZAÇÃO AUTOMÁTICA DO ANO
+    // 7. MODAL DE SOLICITACAO DE ORCAMENTO
+    const quoteModal = document.getElementById('orcamento-modal');
+    const quoteForm = document.getElementById('quote-form');
+    const quoteTriggers = document.querySelectorAll('.quote-trigger');
+    const quoteCloseButtons = quoteModal ? quoteModal.querySelectorAll('[data-quote-close]') : [];
+    const quotePhone = document.getElementById('quote-phone');
+    let lastQuoteTrigger;
+
+    const formatPhone = (value) => {
+        const digits = value.replace(/\D/g, '').slice(0, 11);
+        if (digits.length <= 2) return digits.length ? `(${digits}` : '';
+        if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+        return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+    };
+
+    const closeQuoteModal = () => {
+        if (!quoteModal) return;
+        quoteModal.hidden = true;
+        document.body.classList.remove('quote-modal-open');
+        lastQuoteTrigger?.focus();
+    };
+
+    if (quoteModal && quoteForm) {
+        quoteTriggers.forEach(trigger => {
+            trigger.addEventListener('click', (event) => {
+                event.preventDefault();
+                lastQuoteTrigger = trigger;
+                quoteModal.hidden = false;
+                document.body.classList.add('quote-modal-open');
+                document.getElementById('quote-name').focus();
+            });
+        });
+
+        quoteCloseButtons.forEach(button => button.addEventListener('click', closeQuoteModal));
+        quotePhone?.addEventListener('input', () => {
+            quotePhone.value = formatPhone(quotePhone.value);
+        });
+
+        quoteForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            if (!quoteForm.reportValidity()) return;
+
+            const formData = new FormData(quoteForm);
+            const message = [
+                'Olá! Desejo solicitar um orçamento.',
+                '',
+                `Nome: ${formData.get('nome')}`,
+                `E-mail: ${formData.get('email')}`,
+                `Telefone: ${formData.get('telefone')}`
+            ].join('\n');
+            const whatsappUrl = `https://wa.me/552730262196?text=${encodeURIComponent(message)}`;
+            window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+            closeQuoteModal();
+            quoteForm.reset();
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && !quoteModal.hidden) closeQuoteModal();
+        });
+    }
+
+    // 8. ATUALIZAÇÃO AUTOMÁTICA DO ANO
     const yearSpan = document.getElementById('current-year');
     if (yearSpan) {
         yearSpan.textContent = new Date().getFullYear();
