@@ -1,13 +1,15 @@
 # Tattica Website
 
-Site institucional estático da Tattica (portaria virtual, Espírito Santo): apresentação da empresa, tecnologia, vantagens, como funciona, Tattica Center e contato.
+Site institucional estático da Tattica (portaria virtual, Espírito Santo): apresentação da empresa, soluções, como funciona, Tattica Center, equipamentos, central de monitoramento, benefícios, diferenciais, FAQ e contato.
 
 ## Estrutura
 
-- `Index.html` — página única, em seções.
-- `styles.css` — estilos do site.
-- `script.js` — menu responsivo, cabeçalho, botão de voltar ao topo, ano do rodapé e modal/formulário de orçamento.
-- `images/` — fotos e imagens.
+- `Index.html` — página única, em seções. Os ícones ficam em um sprite SVG no início do `<body>`.
+- `styles.css` — sistema de design do site (tokens em `:root`, componentes e responsivo).
+- `script.js` — menu responsivo, cabeçalho, link ativo da navegação, FAQ, botão de voltar ao topo, ano do rodapé e modal/formulário de orçamento (envia pelo WhatsApp).
+- `images/` — fotos, telas do aplicativo, logotipo e favicon.
+  - `central-operacao.jpg` e `Celular*.jpeg` são os originais; o site usa as versões `.webp` geradas a partir deles.
+- `fonts/` — Archivo (títulos) e IBM Plex Sans (texto), hospedadas localmente, licença SIL OFL.
 
 ## Como rodar
 
