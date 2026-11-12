@@ -65,65 +65,26 @@ document.addEventListener('DOMContentLoaded', () => {
         handleScroll(); // Check on load
     }
 
-    // 3. ANIMAÇÕES DE ENTRADA (Intersection Observer)
-    const animatedElements = document.querySelectorAll('.animate-on-scroll');
-    
-    // Fallback se IntersectionObserver não for suportado
-    if (!('IntersectionObserver' in window)) {
-        animatedElements.forEach(el => el.classList.add('is-visible'));
-    } else {
-        const observerOptions = {
-            root: null,
-            rootMargin: '0px 0px -10% 0px',
-            threshold: 0.1
-        };
+    // 3. LINK ATIVO NA NAVEGAÇÃO (seção visível)
+    const sectionLinks = new Map();
+    navLinks.forEach(link => {
+        const target = document.querySelector(link.getAttribute('href'));
+        if (target) sectionLinks.set(target, link);
+    });
 
-        const scrollObserver = new IntersectionObserver((entries, observer) => {
+    if (sectionLinks.size > 0 && 'IntersectionObserver' in window) {
+        const navObserver = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('is-visible');
-                    observer.unobserve(entry.target); // Anima apenas uma vez
-                }
+                if (!entry.isIntersecting) return;
+                navLinks.forEach(link => link.removeAttribute('aria-current'));
+                sectionLinks.get(entry.target)?.setAttribute('aria-current', 'true');
             });
-        }, observerOptions);
+        }, { rootMargin: '-45% 0px -50% 0px' });
 
-        animatedElements.forEach(el => scrollObserver.observe(el));
+        sectionLinks.forEach((link, section) => navObserver.observe(section));
     }
 
-    // 4. CONTADOR ANIMADO (Números)
-    const counters = document.querySelectorAll('.counter');
-    
-    if (counters.length > 0 && 'IntersectionObserver' in window) {
-        const counterObserver = new IntersectionObserver((entries, observer) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    const counter = entry.target;
-                    const target = +counter.getAttribute('data-target');
-                    const duration = 2000; // 2 segundos
-                    const stepTime = Math.abs(Math.floor(duration / target));
-                    
-                    let current = 0;
-                    const increment = target > 100 ? Math.ceil(target / 50) : 1;
-
-                    const timer = setInterval(() => {
-                        current += increment;
-                        if (current >= target) {
-                            counter.innerText = target;
-                            clearInterval(timer);
-                        } else {
-                            counter.innerText = current;
-                        }
-                    }, stepTime);
-                    
-                    observer.unobserve(counter);
-                }
-            });
-        }, { threshold: 0.5 });
-
-        counters.forEach(counter => counterObserver.observe(counter));
-    }
-
-    // 5. ACCORDION FAQ LOGIC (Exclusividade)
+    // 4. ACCORDION FAQ LOGIC (Exclusividade)
     const faqs = document.querySelectorAll('.faq__item');
     
     if (faqs.length > 0) {
@@ -141,7 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 6. BOTÃO VOLTAR AO TOPO
+    // 5. BOTÃO VOLTAR AO TOPO
     const backToTopBtn = document.getElementById('back-to-top');
     
     if (backToTopBtn) {
@@ -161,7 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 7. MODAL DE SOLICITACAO DE ORCAMENTO
+    // 6. MODAL DE SOLICITAÇÃO DE ORÇAMENTO
     const quoteModal = document.getElementById('orcamento-modal');
     const quoteForm = document.getElementById('quote-form');
     const quoteTriggers = document.querySelectorAll('.quote-trigger');
@@ -187,6 +148,7 @@ document.addEventListener('DOMContentLoaded', () => {
         quoteTriggers.forEach(trigger => {
             trigger.addEventListener('click', (event) => {
                 event.preventDefault();
+                closeMenu();
                 lastQuoteTrigger = trigger;
                 quoteModal.hidden = false;
                 document.body.classList.add('quote-modal-open');
@@ -218,11 +180,28 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         document.addEventListener('keydown', (event) => {
-            if (event.key === 'Escape' && !quoteModal.hidden) closeQuoteModal();
+            if (quoteModal.hidden) return;
+            if (event.key === 'Escape') {
+                closeQuoteModal();
+                return;
+            }
+            if (event.key !== 'Tab') return;
+
+            // Mantém o foco dentro do modal enquanto ele está aberto
+            const focusable = quoteModal.querySelectorAll('button, input, a[href]');
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            if (event.shiftKey && document.activeElement === first) {
+                event.preventDefault();
+                last.focus();
+            } else if (!event.shiftKey && document.activeElement === last) {
+                event.preventDefault();
+                first.focus();
+            }
         });
     }
 
-    // 8. ATUALIZAÇÃO AUTOMÁTICA DO ANO
+    // 7. ATUALIZAÇÃO AUTOMÁTICA DO ANO
     const yearSpan = document.getElementById('current-year');
     if (yearSpan) {
         yearSpan.textContent = new Date().getFullYear();
