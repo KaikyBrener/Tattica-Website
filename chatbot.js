@@ -281,6 +281,12 @@
             typing.remove();
             setStatus('Online');
             let sugerir = false;
+            if (r.recusar) {
+                await say(tok, CFG.recusar || 'Não posso ajudar com isso. Posso ajudar com dúvidas sobre a portaria virtual da Tattica.');
+                const op = await choose(tok, ['Fazer outra pergunta', 'Voltar ao início']);
+                if (op.label.startsWith('Voltar')) return menu(tok, false);
+                continue;
+            }
             if (r.erro) {
                 await say(tok, 'Não consegui responder agora por uma falha minha. Quer falar com um atendente?');
                 sugerir = true;
