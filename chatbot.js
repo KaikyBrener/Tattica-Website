@@ -182,9 +182,9 @@
                 ev.preventDefault();
                 if (tok !== token) { done(); return reject(new Cancel()); }
                 const value = clean(input.value);
-                if (!value) { errorEl.textContent = 'Escreva a sua resposta para continuar.'; return; }
-                if (kind === 'phone' && value.replace(/\D/g, '').length < 10) { errorEl.textContent = 'Digite o telefone com DDD.'; return; }
-                if (kind === 'number' && Number(value) < 1) { errorEl.textContent = 'Digite um número maior que zero.'; return; }
+                if (!value) { errorEl.textContent = 'Escreva a sua resposta e toque em enviar.'; return; }
+                if (kind === 'phone' && value.replace(/\D/g, '').length < 10) { errorEl.textContent = 'Telefone incompleto. Digite com DDD, por exemplo (27) 99999-9999.'; return; }
+                if (kind === 'number' && Number(value) < 1) { errorEl.textContent = 'Digite um número maior que zero, só com algarismos.'; return; }
                 done();
                 addBubble(value, 'user');
                 resolve(value);
@@ -271,7 +271,7 @@
     }
 
     async function perguntar(tok) {
-        await say(tok, 'Pode digitar a sua dúvida. Eu respondo com as informações que a Tattica já divulgou. Sou um assistente virtual e posso errar, então, em caso de dúvida, fale com um atendente.');
+        await say(tok, 'Pode escrever a sua dúvida. Respondo com o que a Tattica já divulgou. Sou um assistente virtual e posso errar, então, se preferir, fale com um atendente.');
         for (;;) {
             const texto = await ask(tok, 'Qual é a sua pergunta?', 'longo');
             setStatus('digitando…');
@@ -282,7 +282,7 @@
             setStatus('Online');
             let sugerir = false;
             if (r.erro) {
-                await say(tok, 'Não consegui responder agora. Posso levar você a um atendente?');
+                await say(tok, 'Não consegui responder agora por uma falha minha. Quer falar com um atendente?');
                 sugerir = true;
             } else if (r.encaminhar || !r.resposta) {
                 await say(tok, CFG.encaminhar);
@@ -300,7 +300,7 @@
     }
 
     async function duvidas(tok) {
-        await say(tok, 'Escolha o assunto:');
+        await say(tok, 'Qual é o assunto?');
         const itens = [...CFG.faq.map(f => f.p), ...CFG.encaminharTitulos];
         const e = await choose(tok, [...itens, 'Voltar ao início']);
         if (e.label === 'Voltar ao início') return menu(tok, false);
@@ -331,7 +331,7 @@
     }
 
     async function atendente(tok) {
-        await say(tok, 'Escolha com quem quer falar:');
+        await say(tok, 'Com quem você quer falar?');
         const e = await choose(tok, ['Comercial (contratar)', 'Manutenção, Tecnologia ou Administrativo', 'Central 24 horas', 'Voltar ao início']);
         if (e.label === 'Voltar ao início') return menu(tok, false);
         if (e.label.startsWith('Comercial')) {
