@@ -20,7 +20,7 @@
             <header class="chat__head">
                 <div>
                     <p class="chat__title">${CFG.nomeAssistente}</p>
-                    <p class="chat__sub">Respostas rápidas e atendimento</p>
+                    <p class="chat__sub" aria-hidden="true"><span class="chat__status-dot"></span><span class="chat__status-text">Online</span></p>
                 </div>
                 <div class="chat__head-actions">
                     <button type="button" class="chat__icon-btn" data-chat-restart aria-label="Recomeçar a conversa" title="Recomeçar">&#8635;</button>
@@ -46,6 +46,8 @@
     const input = root.querySelector('.chat__input');
     const label = root.querySelector('.chat__label');
     const errorEl = root.querySelector('.chat__error');
+    const statusText = root.querySelector('.chat__status-text');
+    const setStatus = (t) => { statusText.textContent = t; root.classList.toggle('is-typing', t !== 'Online'); };
 
     /* ---------- Controle da conversa ---------- */
     let token = 0;               // muda ao recomeçar: interrompe fluxos antigos
@@ -59,23 +61,50 @@
         const el = document.createElement('div');
         el.className = `chat__msg chat__msg--${who}`;
         el.textContent = text;
+        el.dataset.time = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' });
         log.appendChild(el);
         scrollEnd();
         return el;
     }
 
+    /* Quebra respostas longas em mensagens curtas, como uma pessoa faria no chat */
+    function pedacos(texto) {
+        const paragrafos = texto.split(/\n\n+/);
+        const out = [];
+        paragrafos.forEach((p) => {
+            if (p.length <= 170) return out.push(p);
+            const frases = p.match(/[^.!?]+[.!?]+(\s|$)|[^.!?]+$/g) || [p];
+            let atual = '';
+            frases.forEach((f) => {
+                if ((atual + f).length > 170 && atual) { out.push(atual.trim()); atual = ''; }
+                atual += f;
+            });
+            if (atual.trim()) out.push(atual.trim());
+        });
+        return out;
+    }
+
+    const RITMO = Object.assign({ pausa: 450, base: 700, porCaractere: 16, max: 2400 }, CFG.digitacao);
+
     async function say(tok, ...texts) {
-        for (const t of texts) {
+        const todos = texts.flatMap(pedacos);
+        for (let i = 0; i < todos.length; i++) {
+            const t = todos[i];
+            await wait(i === 0 ? RITMO.pausa : 250);      // "lendo" antes de começar a digitar
+            alive(tok);
+            setStatus('digitando…');
             const typing = addBubble('', 'bot');
             typing.classList.add('is-typing');
             typing.innerHTML = '<span class="chat__dot"></span><span class="chat__dot"></span><span class="chat__dot"></span>';
             typing.setAttribute('aria-label', 'Digitando');
-            await wait(Math.min(900, 350 + t.length * 6));
+            await wait(Math.min(RITMO.max, RITMO.base + t.length * RITMO.porCaractere));
             alive(tok);
             typing.classList.remove('is-typing');
             typing.removeAttribute('aria-label');
             typing.textContent = t;
+            typing.dataset.time = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' });
             typing.classList.add('is-written');
+            setStatus('Online');
             scrollEnd();
         }
     }
@@ -204,7 +233,7 @@
 
     /* ---------- Fluxos ---------- */
     async function menu(tok, intro = true) {
-        if (intro) await say(tok, `Olá! Sou o ${CFG.nomeAssistente.toLowerCase()}. Como posso ajudar?`);
+        if (intro) await say(tok, `Oi! 👋 Eu sou o ${CFG.nomeAssistente.toLowerCase()}, o atendimento virtual da Tattica.`, 'Como posso ajudar você hoje?');
         const escolha = await choose(tok, [
             'Quero contratar ou pedir orçamento',
             'Dúvidas sobre a portaria virtual',
@@ -329,6 +358,7 @@
         const tok = ++token;
         log.replaceChildren();
         form.hidden = true;
+        setStatus('Online');
         try { await fn(tok); } catch (e) { if (!(e instanceof Cancel)) console.error(e); }
     }
 
