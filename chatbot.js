@@ -1,4 +1,4 @@
-/* Assistente virtual de respostas prontas (sem IA). Conteúdo em chat-config.js. */
+/* Assistente virtual de respostas prontas. Opcionalmente, uma IA (via proxy) responde perguntas livres. Conteúdo em chat-config.js. */
 (() => {
     'use strict';
     const CFG = window.TATTICA_CHAT;
@@ -157,8 +157,8 @@
             input.value = '';
             input.type = kind === 'number' ? 'text' : 'text';
             input.inputMode = kind === 'text' ? 'text' : 'numeric';
-            input.maxLength = kind === 'phone' ? 15 : 80;
-            input.placeholder = kind === 'phone' ? '(27) 99999-9999' : '';
+            input.maxLength = kind === 'phone' ? 15 : kind === 'longo' ? 300 : 80;
+            input.placeholder = kind === 'phone' ? '(27) 99999-9999' : kind === 'longo' ? 'Digite a sua pergunta' : '';
             errorEl.textContent = '';
             form.hidden = false;
             input.focus();
@@ -238,12 +238,61 @@
             'Quero contratar ou pedir orçamento',
             'Dúvidas sobre a portaria virtual',
             'Sou morador e preciso de ajuda',
+            ...(CFG.iaUrl ? ['Digitar a minha pergunta'] : []),
             'Falar com um atendente'
         ]);
         if (escolha.label.startsWith('Quero')) return orcamento(tok);
         if (escolha.label.startsWith('Dúvidas')) return duvidas(tok);
         if (escolha.label.startsWith('Sou morador')) return morador(tok);
+        if (escolha.label.startsWith('Digitar')) return perguntar(tok);
         return atendente(tok);
+    }
+
+    /* Pergunta livre respondida por IA (opcional, via proxy em ia-proxy/). Só usa o conteúdo aprovado. */
+    async function consultarIA(pergunta) {
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), 15000);
+        try {
+            const r = await fetch(CFG.iaUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ pergunta }),
+                signal: ctrl.signal
+            });
+            if (!r.ok) return { erro: true };
+            return await r.json();
+        } catch { return { erro: true }; } finally { clearTimeout(timer); }
+    }
+
+    async function perguntar(tok) {
+        await say(tok, 'Pode digitar a sua dúvida. Eu respondo com as informações que a Tattica já divulgou. Sou um assistente virtual e posso errar, então, em caso de dúvida, fale com um atendente.');
+        for (;;) {
+            const texto = await ask(tok, 'Qual é a sua pergunta?', 'longo');
+            setStatus('digitando…');
+            const typing = addBubble('', 'bot');
+            typing.classList.add('is-typing');
+            typing.innerHTML = '<span class="chat__dot"></span><span class="chat__dot"></span><span class="chat__dot"></span>';
+            const [r] = await Promise.all([consultarIA(texto), wait(900)]);
+            alive(tok);
+            typing.remove();
+            setStatus('Online');
+            let sugerir = false;
+            if (r.erro) {
+                await say(tok, 'Não consegui responder agora. Posso levar você a um atendente?');
+                sugerir = true;
+            } else if (r.encaminhar || !r.resposta) {
+                await say(tok, CFG.encaminhar);
+                sugerir = true;
+            } else {
+                await say(tok, r.resposta);
+            }
+            const op = await choose(tok, sugerir
+                ? ['Fazer o pedido pelo chat', 'Falar com um atendente', 'Fazer outra pergunta', 'Voltar ao início']
+                : ['Fazer outra pergunta', 'Falar com um atendente', 'Voltar ao início']);
+            if (op.label.startsWith('Fazer o pedido')) return orcamento(tok);
+            if (op.label.startsWith('Falar')) return atendente(tok);
+            if (op.label.startsWith('Voltar')) return menu(tok, false);
+        }
     }
 
     async function duvidas(tok) {

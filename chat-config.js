@@ -1,7 +1,7 @@
 /* ==========================================================================
    Assistente virtual: configuração e conteúdo.
    A empresa pode editar tudo aqui sem mexer no código do chat (chatbot.js).
-   Regra de ouro: o bot só responde o que está escrito neste arquivo.
+   Regra de ouro: o bot (e a IA, se ligada) só responde o que está escrito neste arquivo.
    Tudo o que não está aqui é encaminhado a um atendente.
    ========================================================================== */
 window.TATTICA_CHAT = {
@@ -13,6 +13,9 @@ window.TATTICA_CHAT = {
     /* WhatsApp que recebe os pedidos do Comercial (DDI + DDD + número, só dígitos).
        Hoje está o mesmo número público do site. Troque pelo WhatsApp do Comercial. */
     whatsappComercial: '552730262196',
+
+    /* Endereço do proxy da IA (veja ia-proxy/README.md). Vazio = o chat funciona só com respostas prontas. */
+    iaUrl: '',
 
     /* Endereço do script do Google (veja apps-script/Code.gs). Vazio = não registra em planilha. */
     appsScriptUrl: '',
