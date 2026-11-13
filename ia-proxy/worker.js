@@ -50,7 +50,12 @@ async function reserva(env, pergunta) {
         body: JSON.stringify({
             model: env.RESERVA_MODELO,
             /* OpenAI (modelos novos) exige max_completion_tokens e só aceita a temperatura padrão */
-            ...(env.RESERVA_URL.includes('api.openai.com') ? { max_completion_tokens: 400 } : { temperature: 0.2, max_tokens: 220 }),
+            ...(env.RESERVA_URL.includes('api.openai.com')
+                ? { max_completion_tokens: 400 }
+                /* Modelos gpt-oss "pensam" antes de responder: esforço baixo e mais tokens para sobrar espaço para a resposta */
+                : /gpt-oss/i.test(env.RESERVA_MODELO)
+                    ? { temperature: 0.2, max_tokens: 1024, reasoning_effort: 'low' }
+                    : { temperature: 0.2, max_tokens: 220 }),
             messages: [{ role: 'system', content: SISTEMA }, { role: 'user', content: pergunta }]
         })
     });
