@@ -27,7 +27,7 @@
                     <button type="button" class="chat__icon-btn" data-chat-close aria-label="Fechar o atendimento" title="Fechar">&times;</button>
                 </div>
             </header>
-            <div class="chat__log" role="log" aria-live="polite" aria-relevant="additions"></div>
+            <div class="chat__log" role="log" aria-live="polite" aria-relevant="additions" tabindex="0" aria-label="Conversa"></div>
             <form class="chat__form" hidden>
                 <label class="chat__label" for="chat-input">Sua resposta</label>
                 <div class="chat__form-row">
@@ -67,6 +67,17 @@
         return el;
     }
 
+    /* Indicador "digitando": escondido do leitor de tela, que só lê a mensagem pronta */
+    function addTyping() {
+        const el = document.createElement('div');
+        el.className = 'chat__msg chat__msg--bot is-typing';
+        el.setAttribute('aria-hidden', 'true');
+        el.innerHTML = '<span class="chat__dot"></span><span class="chat__dot"></span><span class="chat__dot"></span>';
+        log.appendChild(el);
+        scrollEnd();
+        return el;
+    }
+
     /* Quebra respostas longas em mensagens curtas, como uma pessoa faria no chat */
     function pedacos(texto) {
         const paragrafos = texto.split(/\n\n+/);
@@ -93,17 +104,11 @@
             await wait(i === 0 ? RITMO.pausa : 250);      // "lendo" antes de começar a digitar
             alive(tok);
             setStatus('digitando…');
-            const typing = addBubble('', 'bot');
-            typing.classList.add('is-typing');
-            typing.innerHTML = '<span class="chat__dot"></span><span class="chat__dot"></span><span class="chat__dot"></span>';
-            typing.setAttribute('aria-label', 'Digitando');
+            const typing = addTyping();
             await wait(Math.min(RITMO.max, RITMO.base + t.length * RITMO.porCaractere));
             alive(tok);
-            typing.classList.remove('is-typing');
-            typing.removeAttribute('aria-label');
-            typing.textContent = t;
-            typing.dataset.time = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' });
-            typing.classList.add('is-written');
+            typing.remove();
+            addBubble(t, 'bot').classList.add('is-written');
             setStatus('Online');
             scrollEnd();
         }
@@ -136,6 +141,7 @@
                 el.addEventListener('click', () => {
                     if (tok !== token) return reject(new Cancel());
                     box.remove();
+                    log.focus({ preventScroll: true });
                     addBubble(item.label, 'user');
                     resolve(item);
                 });
@@ -269,9 +275,7 @@
         for (;;) {
             const texto = await ask(tok, 'Qual é a sua pergunta?', 'longo');
             setStatus('digitando…');
-            const typing = addBubble('', 'bot');
-            typing.classList.add('is-typing');
-            typing.innerHTML = '<span class="chat__dot"></span><span class="chat__dot"></span><span class="chat__dot"></span>';
+            const typing = addTyping();
             const [r] = await Promise.all([consultarIA(texto), wait(900)]);
             alive(tok);
             typing.remove();
