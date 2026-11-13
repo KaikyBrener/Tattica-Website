@@ -35,6 +35,9 @@ Branch de demonstração, ainda não publicada no site em produção.
 2. O cliente toca em "Enviar ao Comercial pelo WhatsApp" e a conversa abre com tudo já escrito.
 3. Se `appsScriptUrl` estiver preenchido, o pedido também cai na planilha (com prioridade alta quando há assembleia marcada) e o Comercial recebe um e-mail.
 
+### IA opcional (perguntas digitadas)
+Com `iaUrl` preenchido em `chat-config.js`, aparece a opção "Digitar a minha pergunta" e uma IA responde só com o conteúdo aprovado do `chat-config.js`. O proxy gratuito (Cloudflare Workers + Gemini) está em `ia-proxy/`. O Grok não entra porque a API dele é paga. Detalhes em `ia-proxy/README.md`.
+
 ### O que o bot NÃO faz
 - Não coleta documentos (CPF, etc.).
 - Não responde contrato, valores nem a origem dos números de economia: encaminha ao Comercial.
