@@ -197,5 +197,13 @@
 }
 
 /* horário em cada mensagem */
-.chat__msg::after { content: attr(data-time); display: block; margin-top: 4px; font-size: .7rem; line-height: 1; opacity: .6; text-align: right; }
+.chat__msg::after { content: attr(data-time); content: attr(data-time) / ""; display: block; margin-top: 4px; font-size: .75rem; line-height: 1; text-align: right; }
+.chat__msg--bot::after { color: var(--muted); }
+.chat__msg--user::after { color: #e4eefb; }
 .chat__msg.is-typing::after { display: none; }
+
+/* foco visível em todos os controles do chat, inclusive sobre fundos escuros e coloridos */
+.chat__head :focus-visible, .chat__launcher:focus-visible, .chat__send:focus-visible { outline-color: var(--blue-300); }
+.chat__launcher:focus-visible, .chat__send:focus-visible { box-shadow: 0 0 0 3px var(--navy-900); }
+.chat__opt:focus-visible { outline-offset: 2px; }
+.chat__log:focus-visible { outline-offset: -3px; border-radius: 0; }
