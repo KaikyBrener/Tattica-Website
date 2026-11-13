@@ -1,0 +1,7 @@
+name = "tattica-chat-ia"
+main = "worker.js"
+compatibility_date = "2025-01-01"
+
+[vars]
+# Endereços do site que podem usar o proxy, separados por vírgula. Vazio libera qualquer origem.
+ORIGENS_PERMITIDAS = ""
