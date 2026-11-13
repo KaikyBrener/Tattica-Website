@@ -18,6 +18,7 @@
         <p class="chat__hint" role="status" hidden>Precisa de ajuda? <strong>Fale conosco</strong></p>
         <section class="chat__panel" id="chat-panel" role="dialog" aria-label="${CFG.nomeAssistente}" hidden>
             <header class="chat__head">
+                <span class="chat__avatar" aria-hidden="true"></span>
                 <div>
                     <p class="chat__title">${CFG.nomeAssistente}</p>
                     <p class="chat__sub" aria-hidden="true"><span class="chat__status-dot"></span><span class="chat__status-text">Online</span></p>
@@ -239,7 +240,7 @@
 
     /* ---------- Fluxos ---------- */
     async function menu(tok, intro = true) {
-        if (intro) await say(tok, `Oi! 👋 Eu sou o ${CFG.nomeAssistente.toLowerCase()}, o atendimento virtual da Tattica.`, 'Como posso ajudar você hoje?');
+        if (intro) await say(tok, 'Oi! 👋 Eu sou o assistente virtual da Tattica.', 'Como posso ajudar você hoje?');
         const escolha = await choose(tok, [
             'Quero contratar ou pedir orçamento',
             'Dúvidas sobre a portaria virtual',
