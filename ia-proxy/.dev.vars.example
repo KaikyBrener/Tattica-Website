@@ -1,0 +1,8 @@
+# Modelo dos segredos locais do proxy da IA.
+# Não coloque a chave aqui. Rode .\configurar-local.ps1 (ou copie este arquivo para .dev.vars e preencha).
+# O arquivo .dev.vars fica só na sua máquina: ele está no .gitignore.
+
+GEMINI_API_KEY=cole_a_chave_do_google_ai_studio_aqui
+
+# Opcional: outro modelo do Gemini, se o padrão do worker.js não existir na sua conta.
+# GEMINI_MODELO=
