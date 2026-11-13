@@ -33,7 +33,7 @@ async function gemini(env, pergunta) {
             generationConfig: { temperature: 0.2, maxOutputTokens: 220 }
         })
     });
-    if (!r.ok) throw new Error('gemini ' + r.status);
+    if (!r.ok) throw new Error('gemini ' + r.status + ' ' + (await r.text()).slice(0, 300));
     const d = await r.json();
     return d.candidates?.[0]?.content?.parts?.map(p => p.text).join('').trim();
 }
@@ -50,7 +50,7 @@ async function reserva(env, pergunta) {
             messages: [{ role: 'system', content: SISTEMA }, { role: 'user', content: pergunta }]
         })
     });
-    if (!r.ok) throw new Error('reserva ' + r.status);
+    if (!r.ok) throw new Error('reserva ' + r.status + ' ' + (await r.text()).slice(0, 300));
     const d = await r.json();
     return d.choices?.[0]?.message?.content?.trim();
 }
@@ -77,7 +77,7 @@ export default {
                 if (!texto) continue;
                 const encaminhar = /^\s*ENCAMINHAR\b/i.test(texto);
                 return json({ encaminhar, resposta: encaminhar ? '' : texto.slice(0, 600) }, 200, h);
-            } catch (e) { /* tenta a próxima fonte */ }
+            } catch (e) { console.log('IA falhou:', f.name, String(e.message || e)); /* tenta a próxima fonte */ }
         }
         return json({ erro: 'indisponivel' }, 503, h);
     }
