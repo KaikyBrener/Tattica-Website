@@ -10,12 +10,12 @@ A API do Grok (xAI) é paga por token e, segundo as fontes consultadas, não tem
 ## Testar na sua máquina
 O `.dev.vars` (com a chave) não vai para o git. Para criá-lo, dentro de `ia-proxy`:
 ```powershell
-.\configurar-local.ps1
-npx wrangler dev
+.\configurar-local.ps1   # uma vez: cria o .dev.vars com as chaves
+.\iniciar-local.ps1      # sempre: sobe o proxy na porta 8787, sem atalhos de teclado
 ```
 Em outro terminal, na pasta do projeto: `npx serve -l 5500 .` e abra `http://localhost:5500/Index.html`.
 Em `localhost` o chat usa sozinho o endereço `iaUrlLocal` (`http://127.0.0.1:8787`), sem mexer no `iaUrl`.
-Não digite nada no terminal do `wrangler dev`: as teclas `t` e `x` abrem um túnel público e fecham o servidor.
+O `iniciar-local.ps1` libera a porta 8787 se um wrangler antigo ficou preso nela e desliga os atalhos do wrangler (a tecla `t` abria um túnel público).
 
 ## Como publicar (grátis)
 1. Crie uma chave em https://aistudio.google.com (sem cartão).

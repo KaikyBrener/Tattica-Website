@@ -52,6 +52,6 @@ node .\gerar-conhecimento.js
 
 Write-Host ''
 Write-Host 'Pronto. Próximos passos:'
-Write-Host '  1. Aqui em ia-proxy:      npx wrangler dev   (não digite nada nesse terminal)'
+Write-Host '  1. Aqui em ia-proxy:      .\iniciar-local.ps1'
 Write-Host '  2. Na pasta do projeto:   npx serve -l 5500 .'
 Write-Host '  3. Abra http://localhost:5500/Index.html e use "Digitar a minha pergunta".'
