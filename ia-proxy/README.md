@@ -7,6 +7,16 @@ A chave da IA fica aqui, no Cloudflare, e nunca vai para o navegador.
 ## Por que não o Grok
 A API do Grok (xAI) é paga por token e, segundo as fontes consultadas, não tem camada gratuita permanente. O Grok gratuito de grok.com é só para conversar no site da xAI, sem API. Por isso o padrão aqui é o **Gemini (Google AI Studio)**, que tem camada gratuita para os modelos Flash e Flash-Lite. Os limites mudam com frequência e são baixos, então use só para demonstração ou pouco tráfego. Na camada gratuita, o Google pode usar as perguntas para melhorar os produtos dele.
 
+## Testar na sua máquina
+O `.dev.vars` (com a chave) não vai para o git. Para criá-lo, dentro de `ia-proxy`:
+```powershell
+.\configurar-local.ps1
+npx wrangler dev
+```
+Em outro terminal, na pasta do projeto: `npx serve -l 5500 .` e abra `http://localhost:5500/Index.html`.
+Em `localhost` o chat usa sozinho o endereço `iaUrlLocal` (`http://127.0.0.1:8787`), sem mexer no `iaUrl`.
+Não digite nada no terminal do `wrangler dev`: as teclas `t` e `x` abrem um túnel público e fecham o servidor.
+
 ## Como publicar (grátis)
 1. Crie uma chave em https://aistudio.google.com (sem cartão).
 2. Instale o Wrangler e entre na conta Cloudflare: `npm i -g wrangler && wrangler login`
