@@ -219,6 +219,11 @@ h3 {
 .nav-link:hover::after,
 .nav-link[aria-current="true"]::after { transform: scaleX(1); }
 .nav-cta { min-height: 44px; padding: 10px 20px; font-size: .95rem; }
+.nav-link, .nav-cta { white-space: nowrap; }
+/* telas médias: menu mais compacto para caber todos os itens em uma linha */
+@media (min-width: 1024px) and (max-width: 1259px) {
+    .nav-list { gap: 16px; }
+    .nav-link { font-size: .88rem; }
     .header .logo img { width: auto; height: 34px; }
     .nav-cta { padding: 10px 14px; font-size: .88rem; }
 }
