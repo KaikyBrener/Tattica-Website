@@ -316,19 +316,31 @@
         }
     }
 
-    async function duvidas(tok) {
-        await say(tok, 'Qual é o assunto?');
-        const itens = [...CFG.faq.map(f => f.p), ...CFG.encaminharTitulos];
-        const e = await choose(tok, [...itens, 'Voltar ao início']);
-        if (e.label === 'Voltar ao início') return menu(tok, false);
-        const faq = CFG.faq.find(f => f.p === e.label);
-        if (faq) {
-            await say(tok, faq.r);
-            const r = await choose(tok, ['Quero um orçamento', 'Outra dúvida', 'Voltar ao início']);
-            if (r.label === 'Quero um orçamento') return orcamento(tok);
-            if (r.label === 'Outra dúvida') return duvidas(tok);
-            return menu(tok, false);
+    async function duvidas(tok, tema) {
+        const temas = [...new Set(CFG.faq.map(f => f.tema).filter(Boolean))];
+        /* Com temas configurados, primeiro escolhe o tema e depois a pergunta */
+        if (temas.length && !tema) {
+            await say(tok, 'Qual é o assunto?');
+            const t = await choose(tok, [...temas, ...CFG.encaminharTitulos, 'Voltar ao início']);
+            if (t.label === 'Voltar ao início') return menu(tok, false);
+            if (temas.includes(t.label)) return duvidas(tok, t.label);
+            return encaminharDuvida(tok);
         }
+        const lista = tema ? CFG.faq.filter(f => f.tema === tema) : CFG.faq;
+        await say(tok, tema ? 'Qual é a sua dúvida?' : 'Qual é o assunto?');
+        const e = await choose(tok, [...lista.map(f => f.p), ...(tema ? ['Ver outros temas'] : CFG.encaminharTitulos), 'Voltar ao início']);
+        if (e.label === 'Voltar ao início') return menu(tok, false);
+        if (e.label === 'Ver outros temas') return duvidas(tok);
+        const faq = lista.find(f => f.p === e.label);
+        if (!faq) return encaminharDuvida(tok);
+        await say(tok, faq.r);
+        const r = await choose(tok, ['Quero um orçamento', 'Outra dúvida', 'Voltar ao início']);
+        if (r.label === 'Quero um orçamento') return orcamento(tok);
+        if (r.label === 'Outra dúvida') return duvidas(tok, tema);
+        return menu(tok, false);
+    }
+
+    async function encaminharDuvida(tok) {
         await say(tok, CFG.encaminhar);
         const r = await choose(tok, ['Sim, enviar meu pedido', 'Voltar ao início']);
         return r.label.startsWith('Sim') ? orcamento(tok) : menu(tok, false);
