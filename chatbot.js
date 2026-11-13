@@ -56,6 +56,16 @@
     class Cancel extends Error {}
 
     const scrollEnd = () => log.scrollTo({ top: log.scrollHeight, behavior: reduceMotion ? 'auto' : 'smooth' });
+    /* Quando a área da conversa muda de tamanho (campo de texto abre ou fecha, teclado do celular),
+       mantém a última mensagem à vista, se a pessoa já estava lendo o fim. */
+    if ('ResizeObserver' in window) {
+        let ultimaAltura = log.clientHeight;
+        new ResizeObserver(() => {
+            const encolheu = log.clientHeight < ultimaAltura;
+            ultimaAltura = log.clientHeight;
+            if (encolheu) log.scrollTop = log.scrollHeight;
+        }).observe(log);
+    }
     const alive = (tok) => { if (tok !== token) throw new Cancel(); };
 
     function addBubble(text, who) {
