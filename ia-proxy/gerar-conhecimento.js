@@ -9,7 +9,7 @@ const ctx = { window: {} };
 vm.runInNewContext(origem, ctx);
 const c = ctx.window.TATTICA_CHAT;
 
-const bloco = (titulo, itens) => `${titulo}\n` + itens.map(i => `- ${i.p}: ${i.r.replace(/\s*\n+\s*/g, ' ')}`).join('\n');
+const bloco = (titulo, itens) => `${titulo}\n` + itens.map(i => `- ${i.tema ? '[' + i.tema + '] ' : ''}${i.p}: ${i.r.replace(/\s*\n+\s*/g, ' ')}`).join('\n');
 const texto = [
     'EMPRESA: Tattica, portaria virtual e segurança eletrônica na Grande Vitória (ES).',
     `Comercial: segunda a sexta, das ${c.horarioComercial.inicio}h às ${c.horarioComercial.fim}h. Central 24 horas.`,
