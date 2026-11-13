@@ -7,6 +7,9 @@
 window.TATTICA_CHAT = {
     nomeAssistente: 'Assistente Tattica',
 
+    /* Ritmo de "digitação" do bot, em milissegundos. Aumente para um jeito mais calmo. */
+    digitacao: { pausa: 450, base: 700, porCaractere: 16, max: 2400 },
+
     /* WhatsApp que recebe os pedidos do Comercial (DDI + DDD + número, só dígitos).
        Hoje está o mesmo número público do site. Troque pelo WhatsApp do Comercial. */
     whatsappComercial: '552730262196',
