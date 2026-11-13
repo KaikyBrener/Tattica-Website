@@ -14,8 +14,11 @@ window.TATTICA_CHAT = {
        Hoje está o mesmo número público do site. Troque pelo WhatsApp do Comercial. */
     whatsappComercial: '552730262196',
 
-    /* Endereço do proxy da IA (veja ia-proxy/README.md). Vazio = o chat funciona só com respostas prontas. */
+    /* Endereço do proxy da IA publicado (veja ia-proxy/README.md). Vazio = o chat funciona só com respostas prontas. */
     iaUrl: '',
+
+    /* Quando o site roda em localhost, o chat usa este endereço (o "npx wrangler dev"), sem precisar mexer no iaUrl. */
+    iaUrlLocal: 'http://127.0.0.1:8787',
 
     /* Endereço do script do Google (veja apps-script/Code.gs). Vazio = não registra em planilha. */
     appsScriptUrl: '',

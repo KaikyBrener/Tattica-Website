@@ -2,6 +2,9 @@
 (() => {
     'use strict';
     const CFG = window.TATTICA_CHAT;
+    /* Em localhost, usa o proxy local da IA, se o iaUrl publicado estiver vazio */
+    const emLocalhost = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
+    if (!CFG.iaUrl && emLocalhost && CFG.iaUrlLocal) CFG.iaUrl = CFG.iaUrlLocal;
     if (!CFG) return;
 
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
