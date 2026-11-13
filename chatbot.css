@@ -53,7 +53,9 @@
     background: var(--navy-900);
 }
 .chat__title { font: 600 1.05rem/1.2 var(--font-display); }
-.chat__sub { margin-top: 2px; color: var(--on-dark); font-size: .82rem; }
+.chat__sub { display: flex; align-items: center; gap: 7px; margin-top: 3px; color: var(--on-dark); font-size: .82rem; }
+.chat__status-dot { width: 8px; height: 8px; border-radius: 50%; background: #3ddc84; transition: background-color .2s ease; }
+.chat.is-typing .chat__status-dot { background: var(--blue-300); animation: chat-dot 1s ease-in-out infinite; }
 .chat__head-actions { display: flex; gap: 2px; }
 .chat__icon-btn {
     width: 44px;
@@ -193,3 +195,7 @@
     .chat *, .chat__hint, .chat__launcher, .chat__panel { animation: none !important; transition: none !important; }
     .chat__hint { display: none; }
 }
+
+/* horário em cada mensagem */
+.chat__msg::after { content: attr(data-time); display: block; margin-top: 4px; font-size: .7rem; line-height: 1; opacity: .6; text-align: right; }
+.chat__msg.is-typing::after { display: none; }
