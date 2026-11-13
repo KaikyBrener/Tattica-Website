@@ -40,16 +40,15 @@ window.TATTICA_CHAT = {
         { tema: 'Como funciona', p: 'Como os moradores entram?', r: 'Nas portas de pedestre, por biometria facial ou pelo aplicativo. Na garagem, por controle remoto ou pelo QR-Code do aplicativo.' },
         { tema: 'Como funciona', p: 'Quem é a Tattica?', r: 'A Tattica é pioneira em portaria virtual no Espírito Santo. Une tecnologia, atendimento humanizado e gestão para trazer segurança, eficiência e redução de custos aos condomínios.' },
 
-        { tema: 'Segurança e manutenção', p: 'Tem ronda no condomínio?', r: 'Sim. A ronda ativa passa em média 3 vezes ao dia, nas 24 horas, para verificar a área interna e movimentações suspeitas. O condomínio é avisado pelo sistema quando a ronda chega.' },
+        { tema: 'Segurança e manutenção', p: 'Tem ronda no condomínio?', r: 'Sim. A ronda ativa verifica a área interna do condomínio e movimentações suspeitas, e o condomínio é avisado pelo sistema quando a ronda chega.' },
         { tema: 'Segurança e manutenção', p: 'E se um equipamento der problema?', r: 'A Tattica faz manutenção preventiva e corretiva, com suporte 24 horas, inclusive para problemas em portões. O condomínio é notificado das ordens de serviço realizadas.' },
-        { tema: 'Segurança e manutenção', p: 'E se faltar energia?', r: 'A estrutura prevista conta com nobreak e baterias para manter os equipamentos funcionando, além de suporte técnico 24 horas para reduzir o impacto na rotina.' },
+        { tema: 'Segurança e manutenção', p: 'E se faltar energia?', r: 'A infraestrutura da operação conta com suporte técnico e recursos de contingência para manter a rotina funcionando com o menor impacto possível.' },
         { tema: 'Segurança e manutenção', p: 'Por quanto tempo as imagens ficam guardadas?', r: 'As imagens ficam guardadas por 15 dias, conforme o contrato, e só o síndico responsável pode solicitá-las.' },
 
         { tema: 'Instalação e estrutura', p: 'Quanto tempo leva a implantação?', r: 'Depende de cada condomínio, mas geralmente leva cerca de 2 meses.' },
         { tema: 'Instalação e estrutura', p: 'Precisa de obra?', r: 'A proposta aproveita o cabeamento do interfone que o condomínio já tem. Serviços de estrutura, como alvenaria, tubulação ou gesso, não entram na proposta inicial e são avaliados à parte.' },
         { tema: 'Instalação e estrutura', p: 'Precisa de internet?', r: 'Sim. É preciso uma conexão por fibra óptica de no mínimo 10 Mb full. A contratação dessa internet é responsabilidade do condomínio, e o Comercial orienta como fazer.' },
         { tema: 'Instalação e estrutura', p: 'Posso usar as câmeras que já tenho?', r: 'Em muitos casos, sim. A infraestrutura existente é avaliada para verificar a compatibilidade com a operação.' },
-        { tema: 'Instalação e estrutura', p: 'Preciso comprar os equipamentos?', r: 'Um dos formatos é a locação: a Tattica fornece os equipamentos e eles entram na mensalidade. O Comercial explica as condições de cada formato.' },
 
         { tema: 'Aplicativo e tecnologia', p: 'O que o aplicativo faz?', r: 'O Tattica Center permite abrir portões por QR-Code, enviar chave virtual para visitantes, agendar mudanças e áreas comuns, cadastrar moradores e ver as câmeras.' },
         { tema: 'Aplicativo e tecnologia', p: 'O condomínio vê as câmeras?', r: 'Sim. As câmeras podem ser vistas pelo aplicativo Tattica Center, conforme a estrutura do condomínio.' },
