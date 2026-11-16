@@ -1,0 +1,212 @@
+/* ==========================================================================
+   TATTICA — chatbot
+   Usa os tokens definidos em styles.css (carregue este arquivo depois dele).
+   Camadas: abaixo do modal de orçamento (1300) e acima do cabeçalho (1000).
+   ========================================================================== */
+
+.tbot {
+    position: fixed;
+    left: 20px;
+    bottom: 20px;
+    z-index: 1100;
+    font-family: var(--font-body);
+}
+
+/* ---------- Botão flutuante ---------- */
+.tbot__launcher {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 52px;
+    padding: 0 20px 0 16px;
+    border: 0;
+    border-radius: 999px;
+    color: var(--white);
+    background: var(--blue-600);
+    box-shadow: 0 10px 24px rgba(10, 22, 43, .3);
+    font-size: .95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .2s ease, transform .2s ease;
+}
+.tbot__launcher:hover { background: var(--blue-800); }
+.tbot__launcher svg { width: 22px; height: 22px; flex: none; }
+.tbot.is-open .tbot__launcher { display: none; }
+
+/* ---------- Janela ---------- */
+.tbot__panel {
+    display: flex;
+    flex-direction: column;
+    width: 380px;
+    height: min(600px, calc(100dvh - 40px));
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    color: var(--ink);
+    background: var(--white);
+    box-shadow: 0 30px 80px rgba(10, 22, 43, .35);
+}
+.tbot__panel[hidden] { display: none; }
+
+.tbot__head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 8px 14px 18px;
+    color: var(--white);
+    background: var(--navy-900);
+}
+.tbot__title { flex: 1; display: grid; line-height: 1.25; }
+.tbot__title strong { font-family: var(--font-display); font-size: 1rem; font-weight: 650; }
+.tbot__title span { color: var(--on-dark); font-size: .8rem; }
+.tbot__icon-btn {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border: 0;
+    border-radius: var(--r-sm);
+    color: var(--on-dark);
+    background: transparent;
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+}
+.tbot__icon-btn:hover { color: var(--white); background: rgba(255, 255, 255, .12); }
+.tbot__icon-btn svg { width: 20px; height: 20px; }
+.tbot__head :focus-visible { outline-color: var(--blue-300); }
+
+/* ---------- Conversa ---------- */
+.tbot__log {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 18px 16px 8px;
+    overflow-y: auto;
+    background: var(--paper);
+    scroll-behavior: smooth;
+}
+.tbot__msg {
+    max-width: 85%;
+    padding: 10px 14px;
+    border-radius: var(--r-md);
+    font-size: .95rem;
+    line-height: 1.5;
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+}
+.tbot__msg--bot {
+    align-self: flex-start;
+    border-bottom-left-radius: 4px;
+    color: var(--ink);
+    background: var(--white);
+    border: 1px solid var(--line);
+}
+.tbot__msg--user {
+    align-self: flex-end;
+    border-bottom-right-radius: 4px;
+    color: var(--white);
+    background: var(--blue-600);
+}
+.tbot__msg--erro {
+    border-color: #c9372c;
+    color: #8a1f17;
+    background: #fdecea;
+}
+
+/* Indicador de "digitando" */
+.tbot__typing { display: inline-flex; gap: 4px; align-items: center; min-height: 24px; }
+.tbot__typing i {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--muted);
+    animation: tbot-blink 1s infinite ease-in-out;
+}
+.tbot__typing i:nth-child(2) { animation-delay: .15s; }
+.tbot__typing i:nth-child(3) { animation-delay: .3s; }
+@keyframes tbot-blink {
+    0%, 80%, 100% { opacity: .25; }
+    40% { opacity: 1; }
+}
+
+/* ---------- Opções (botões de resposta) ---------- */
+.tbot__options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px 16px 14px;
+    background: var(--paper);
+}
+.tbot__options:empty { display: none; }
+.tbot__option {
+    min-height: 44px;
+    padding: 8px 16px;
+    border: 1px solid var(--blue-600);
+    border-radius: var(--r-md);
+    color: var(--blue-700);
+    background: var(--white);
+    font-size: .92rem;
+    font-weight: 500;
+    text-align: left;
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease;
+}
+.tbot__option:hover { background: var(--blue-100); }
+.tbot__option--primary { color: var(--white); background: var(--blue-600); }
+.tbot__option--primary:hover { color: var(--white); background: var(--blue-800); }
+.tbot__option--whatsapp { border-color: var(--green); color: var(--white); background: var(--green); }
+.tbot__option--whatsapp:hover { color: var(--white); background: #146636; }
+
+/* ---------- Campo de texto (passos do lead) ---------- */
+.tbot__form {
+    display: flex;
+    gap: 8px;
+    padding: 12px 16px 16px;
+    border-top: 1px solid var(--line);
+    background: var(--white);
+}
+.tbot__form[hidden] { display: none; }
+.tbot__input {
+    flex: 1;
+    min-width: 0;
+    min-height: 44px;
+    padding: 8px 14px;
+    border: 1px solid #8da0ba;
+    border-radius: var(--r-sm);
+    color: var(--ink);
+    background: var(--white);
+    font: inherit;
+    font-size: 1rem;
+}
+.tbot__input::placeholder { color: #5f6f88; opacity: 1; }
+.tbot__input:focus { border-color: var(--blue-600); outline: 3px solid rgba(10, 107, 224, .25); outline-offset: 0; }
+.tbot__send {
+    min-height: 44px;
+    padding: 0 18px;
+    border: 0;
+    border-radius: var(--r-sm);
+    color: var(--white);
+    background: var(--blue-600);
+    font-weight: 600;
+    cursor: pointer;
+}
+.tbot__send:hover { background: var(--blue-800); }
+.tbot__erro { padding: 0 16px 8px; color: #8a1f17; background: var(--white); font-size: .85rem; }
+.tbot__erro:empty { display: none; }
+
+/* ---------- Telas pequenas ---------- */
+@media (max-width: 480px) {
+    .tbot { left: 12px; right: 12px; bottom: 12px; pointer-events: none; }
+    .tbot__launcher,
+    .tbot__panel { pointer-events: auto; }
+    .tbot__panel { width: 100%; height: min(600px, calc(100dvh - 24px)); }
+    .tbot__launcher { min-height: 48px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tbot__log { scroll-behavior: auto; }
+    .tbot__typing i { animation: none; opacity: .6; }
+    .tbot__launcher { transition: none; }
+}
