@@ -18,3 +18,30 @@ Não há build. Abra `index.html` no navegador ou sirva a pasta com qualquer ser
 ```bash
 python3 -m http.server 8000
 ```
+
+---
+
+## Demonstração: assistente virtual (chat) — projeto pessoal
+
+Branch de demonstração, ainda não publicada no site em produção.
+
+- `chatbot.js` — o chat (sem IA, só botões e respostas prontas). Não precisa mexer.
+- `chat-config.js` — todo o conteúdo editável: WhatsApp do Comercial, horário, telefones, perguntas e respostas.
+- `chatbot.css` — visual, usando as cores e fontes do site.
+- `apps-script/Code.gs` — opcional e gratuito: registra cada pedido em uma planilha do Google, avisa por e-mail e cria um botão "Chamar no WhatsApp" para cada cliente.
+
+### Como o pedido chega ao Comercial
+1. O chat faz perguntas curtas (perfil, blocos, unidades, portaria atual, estrutura, local, assembleia, nome e telefone) e pede o consentimento.
+2. O cliente toca em "Enviar ao Comercial pelo WhatsApp" e a conversa abre com tudo já escrito.
+3. Se `appsScriptUrl` estiver preenchido, o pedido também cai na planilha (com prioridade alta quando há assembleia marcada) e o Comercial recebe um e-mail.
+
+### IA opcional (perguntas digitadas)
+Com `iaUrl` preenchido em `chat-config.js`, aparece a opção "Digitar a minha pergunta" e uma IA responde só com o conteúdo aprovado do `chat-config.js`. O proxy gratuito (Cloudflare Workers + Gemini) está em `ia-proxy/`. O Grok não entra porque a API dele é paga. Detalhes em `ia-proxy/README.md`.
+
+### O que o bot NÃO faz
+- Não coleta documentos (CPF, etc.).
+- Não responde contrato, valores nem a origem dos números de economia: encaminha ao Comercial.
+- Não guarda dados no site.
+
+### Antes de qualquer uso real
+Trocar `whatsappComercial` pelo número do Comercial, revisar todas as respostas em `chat-config.js` com a gerência e definir a resposta oficial para perguntas sobre reputação da empresa.
