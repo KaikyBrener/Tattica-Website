@@ -4,7 +4,7 @@ Site institucional estático da Tattica (portaria virtual, Espírito Santo): apr
 
 ## Estrutura
 
-- `Index.html` — página única, em seções. Os ícones ficam em um sprite SVG no início do `<body>`.
+- `index.html` — página única, em seções. Os ícones ficam em um sprite SVG no início do `<body>`.
 - `styles.css` — sistema de design do site (tokens em `:root`, componentes e responsivo).
 - `script.js` — menu responsivo, cabeçalho, link ativo da navegação, FAQ, botão de voltar ao topo, ano do rodapé e modal/formulário de orçamento (envia pelo WhatsApp).
 - `images/` — fotos, telas do aplicativo, logotipo e favicon.
@@ -13,7 +13,7 @@ Site institucional estático da Tattica (portaria virtual, Espírito Santo): apr
 
 ## Como rodar
 
-Não há build. Abra `Index.html` no navegador ou sirva a pasta com qualquer servidor estático:
+Não há build. Abra `index.html` no navegador ou sirva a pasta com qualquer servidor estático:
 
 ```bash
 python3 -m http.server 8000
