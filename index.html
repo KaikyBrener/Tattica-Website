@@ -16,6 +16,7 @@
     <link rel="preload" href="fonts/archivo-latin-wdth.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="fonts/ibm-plex-sans-latin-400.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="chatbot.css">
 
     <script type="application/ld+json">
     {
@@ -101,6 +102,7 @@
                     <li><a href="#central" class="nav-link">Central</a></li>
                     <li><a href="#beneficios" class="nav-link">Benefícios</a></li>
                     <li><a href="#contato" class="nav-link">Contato</a></li>
+                    <li><a href="#trabalhe-conosco" class="nav-link">Trabalhe conosco</a></li>
                 </ul>
                 <a href="#orcamento-modal" class="btn btn--primary nav-cta quote-trigger" aria-haspopup="dialog">Solicitar orçamento</a>
             </nav>
@@ -543,6 +545,13 @@
 
                 <div class="contact__map">
                     <div class="map-frame">
+                        <!-- Aparece por trás do mapa. Se o mapa não carregar, a pessoa ainda vê o endereço e o botão. -->
+                        <div class="map-fallback">
+                            <svg class="icon" aria-hidden="true"><use href="#i-pin"/></svg>
+                            <strong>Sede da Tattica</strong>
+                            <span>Rua Ulisses Sarmento, 24<br>Praia do Suá, Vitória, ES</span>
+                            <a href="https://www.google.com/maps/dir/?api=1&amp;destination=Rua+Ulisses+Sarmento,+24,+Praia+do+Su%C3%A1,+Vit%C3%B3ria+-+ES" class="btn btn--primary" target="_blank" rel="noopener noreferrer">Como chegar</a>
+                        </div>
                         <iframe src="https://www.google.com/maps?q=Rua+Ulisses+Sarmento,+24,+Praia+do+Su%C3%A1,+Vit%C3%B3ria+-+ES&output=embed" title="Mapa da sede da Tattica em Vitória, Espírito Santo" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
                     </div>
                     <a href="https://maps.app.goo.gl/Avk3cpEX6ggy2bdf8" target="_blank" rel="noopener noreferrer" class="map-link">Abrir localização no Google Maps</a>
@@ -550,7 +559,7 @@
             </div>
 
             <div class="container">
-                <div class="careers">
+                <div class="careers" id="trabalhe-conosco">
                     <div>
                         <h3>Trabalhe com a Tattica</h3>
                         <p>Seja um colaborador Tattica e cresça junto com a gente.</p>
@@ -646,6 +655,8 @@
     </button>
 
     <script src="script.js" defer></script>
+    <script src="chat-config.js" defer></script>
+    <script src="chatbot.js" defer></script>
 
 </body>
 </html>

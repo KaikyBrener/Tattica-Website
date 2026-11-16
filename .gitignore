@@ -16,3 +16,7 @@ build/
 *.log
 .env
 .env.*
+
+# Proxy da IA: segredos e cache locais
+.dev.vars
+.wrangler/
