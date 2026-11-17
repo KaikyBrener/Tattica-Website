@@ -43,7 +43,6 @@ window.TATTICA_CHAT = {
         { tema: 'Como funciona', p: 'Como os moradores entram?', r: 'Nas portas de pedestre, por biometria facial ou pelo aplicativo. Na garagem, por controle remoto ou pelo QR-Code do aplicativo.' },
         { tema: 'Como funciona', p: 'Quem é a Tattica?', r: 'A Tattica é pioneira em portaria virtual no Espírito Santo. Une tecnologia, atendimento humanizado e gestão para trazer segurança, eficiência e redução de custos aos condomínios.' },
 
-        { tema: 'Segurança e manutenção', p: 'Tem ronda no condomínio?', r: 'Sim. A ronda ativa verifica a área interna do condomínio e movimentações suspeitas, e o condomínio é avisado pelo sistema quando a ronda chega.' },
         { tema: 'Segurança e manutenção', p: 'E se um equipamento der problema?', r: 'A Tattica faz manutenção preventiva e corretiva, com suporte 24 horas, inclusive para problemas em portões. O condomínio é notificado das ordens de serviço realizadas.' },
         { tema: 'Segurança e manutenção', p: 'E se faltar energia?', r: 'A infraestrutura da operação conta com suporte técnico e recursos de contingência para manter a rotina funcionando com o menor impacto possível.' },
         { tema: 'Segurança e manutenção', p: 'Por quanto tempo as imagens ficam guardadas?', r: 'As imagens ficam guardadas por 15 dias, conforme o contrato, e só o síndico responsável pode solicitá-las.' },
