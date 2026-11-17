@@ -417,18 +417,27 @@
         lead.origem = location.pathname;
         lead.criadoEm = new Date().toISOString();
 
-        let registrado = false;
-        if (CFG.appsScriptUrl) {
-            try {
-                await fetch(CFG.appsScriptUrl, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(lead) });
-                registrado = true;
-            } catch (_) { registrado = false; }
-        }
+        let situacao = await registrarPedido(lead);
         alive(tok);
 
         const texto = mensagemComercial(lead);
 
-        await say(tok, registrado
+        if (situacao === 'falhou') {
+            for (;;) {
+                await say(tok, 'Não consegui confirmar o registro do pedido por aqui. Para garantir que o Comercial receba, envie pelo WhatsApp: a mensagem já está pronta.');
+                const r = await choose(tok, [{ label: 'Enviar ao Comercial pelo WhatsApp', href: wa(texto) }, 'Tentar enviar de novo', 'Voltar ao início']);
+                if (r.label.startsWith('Voltar')) return menu(tok, false);
+                setStatus('digitando…');
+                const typing = addTyping();
+                situacao = await registrarPedido(lead);
+                alive(tok);
+                typing.remove();
+                setStatus('Online');
+                if (situacao !== 'falhou') break;
+            }
+        }
+
+        await say(tok, situacao === 'confirmado'
             ? 'Pedido registrado! O Comercial recebe os seus dados.'
             : 'Pedido pronto!');
         await say(tok, dentroDoHorario()
@@ -436,6 +445,30 @@
             : 'O Comercial atende de segunda a sexta, das 8h às 18h. Envie a mensagem pelo WhatsApp e eles respondem no próximo dia útil.');
         await choose(tok, [{ label: 'Enviar ao Comercial pelo WhatsApp', href: wa(texto) }, 'Voltar ao início']);
         return menu(tok, false);
+    }
+
+    /* Envia o pedido ao script do Google e LÊ a resposta, em vez de assumir que deu certo.
+       Retorna 'confirmado', 'falhou' ou 'sem-planilha' (quando não há script configurado).
+       O Content-Type text/plain evita a verificação prévia (preflight) do navegador. */
+    async function registrarPedido(lead) {
+        if (!CFG.appsScriptUrl) return 'sem-planilha';
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), 20000);
+        try {
+            const r = await fetch(CFG.appsScriptUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(lead),
+                signal: ctrl.signal
+            });
+            if (!r.ok) return 'falhou';
+            const resposta = await r.json();
+            return resposta && resposta.ok === true ? 'confirmado' : 'falhou';
+        } catch (_) {
+            return 'falhou';
+        } finally {
+            clearTimeout(timer);
+        }
     }
 
     /* ---------- Abrir, fechar, recomeçar ---------- */
