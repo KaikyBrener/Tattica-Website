@@ -24,8 +24,8 @@
 .chat__launcher:hover { background: var(--blue-800); }
 .chat .icon { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 
-/* o botão de voltar ao topo sobe para não ficar embaixo do chat */
-.back-to-top { bottom: 88px; }
+/* o botão de voltar ao topo fica acima do botão do chat, com folga para o anel pulsante (18px) */
+.back-to-top { bottom: 104px; }
 
 .chat__panel {
     position: fixed;
@@ -168,8 +168,8 @@
 
 .chat__hint {
     position: fixed;
-    right: 20px;
-    bottom: 88px;
+    right: 20px;               /* a posição real é calculada em chatbot.js: ao lado do botão do chat */
+    bottom: 20px;
     z-index: 1100;
     max-width: 240px;
     margin: 0;

@@ -222,6 +222,43 @@
         return h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite';
     }
 
+    /* Triagem informativa: só aponta o que o Comercial precisa confirmar. Não promete nem nega nada. */
+    function pontosAvaliar(l) {
+        const p = [];
+        if (l.internet === 'Pode contratar') p.push('contratação da fibra óptica (mín. 10 Mb)');
+        if (l.internet === 'Não sei') p.push('internet: confirmar se há fibra óptica de no mínimo 10 Mb');
+        if (l.interfone === 'Não') p.push('interfone sem cabeamento: avaliar a estrutura');
+        if (l.interfone === 'Não sei') p.push('cabeamento do interfone: confirmar');
+        if (l.estrutura === 'Sim') p.push('câmeras ou acesso existentes: avaliar compatibilidade');
+        return p;
+    }
+
+    /* Resumo para o síndico levar à assembleia. Só usa fatos já aprovados no FAQ. */
+    function resumoAssembleia(l) {
+        const blocos = l.blocos === '1' ? '1 bloco' : l.blocos === '5 ou mais' ? '5 ou mais blocos' : `${l.blocos} blocos`;
+        return [
+            'RESUMO PARA ASSEMBLEIA: PORTARIA VIRTUAL TATTICA',
+            '',
+            'Dados do condomínio',
+            `- Localização: ${l.local}`,
+            `- Porte: ${blocos}, cerca de ${l.unidades} unidades`,
+            `- Portaria atual: ${l.portaria.toLowerCase()}`,
+            '',
+            'Pauta sugerida',
+            '- Apresentação da proposta de portaria virtual da Tattica.',
+            '- Deliberação sobre a contratação, conforme a convenção do condomínio.',
+            '',
+            'Pontos que o Comercial esclarece',
+            '- Implantação: geralmente cerca de 2 meses, conforme o condomínio.',
+            '- Internet: fibra óptica de no mínimo 10 Mb full, contratada pelo condomínio.',
+            '- Cabeamento do interfone existente é aproveitado; serviços de estrutura (alvenaria, tubulação, gesso) são avaliados à parte.',
+            '- Imagens das câmeras guardadas por 15 dias, conforme o contrato.',
+            '- Valores: apresentados na proposta comercial.',
+            '',
+            `Comercial Tattica: segunda a sexta, das 8h às 18h. Telefone ${CFG.contatos[0].texto}.`
+        ].join('\n');
+    }
+
     /* Mensagem profissional enviada ao Comercial pelo WhatsApp */
     function mensagemComercial(l) {
         const pedido = {
@@ -246,6 +283,8 @@
             `*Portaria atual:* ${l.portaria.toLowerCase()}`,
             `*Câmeras ou controle de acesso:* ${estrutura}`,
             `*Assembleia:* ${assembleia}`,
+            `*Internet (fibra 10 Mb):* ${l.internet.toLowerCase()}`,
+            `*Cabeamento do interfone:* ${l.interfone.toLowerCase()}`,
             '',
             'Aguardo o retorno de vocês. Desde já, agradeço a atenção.'
         ].join('\n');
@@ -356,7 +395,8 @@
         if (e.label === 'Falar com um atendente') return atendente(tok);
         const item = CFG.morador.find(m => m.p === e.label);
         await say(tok, item.r);
-        const r = await choose(tok, ['Outro assunto de morador', 'Falar com um atendente', 'Voltar ao início']);
+        const video = /^https:\/\//.test(item.video || '') ? [{ label: 'Assistir ao vídeo tutorial', href: item.video }] : [];
+        const r = await choose(tok, [...video, 'Outro assunto de morador', 'Falar com um atendente', 'Voltar ao início']);
         if (r.label.startsWith('Outro')) return morador(tok);
         if (r.label.startsWith('Falar')) return atendente(tok);
         return menu(tok, false);
@@ -402,6 +442,11 @@
         lead.portaria = (await choose(tok, ['Portaria física (porteiros)', 'Portaria terceirizada', 'Portaria virtual', 'Não tem portaria'])).label;
         await say(tok, 'O condomínio já tem câmeras ou controle de acesso?');
         lead.estrutura = (await choose(tok, ['Sim', 'Não', 'Não sei'])).label;
+        await say(tok, 'O condomínio tem, ou pode contratar, internet por fibra óptica de no mínimo 10 Mb? Essa contratação fica por conta do condomínio.');
+        lead.internet = (await choose(tok, ['Já tem fibra óptica', 'Pode contratar', 'Não sei'])).label;
+        await say(tok, 'O interfone atual tem cabeamento? A proposta aproveita o cabeamento que já existe.');
+        lead.interfone = (await choose(tok, ['Sim', 'Não', 'Não sei'])).label;
+        lead.pontos = pontosAvaliar(lead);
         lead.local = await ask(tok, 'Qual o bairro e a cidade?');
         await say(tok, 'Já existe assembleia marcada para decidir sobre a portaria?');
         lead.assembleia = (await choose(tok, ['Sim, já marcada', 'Vamos marcar', 'Sem previsão'])).label;
@@ -409,7 +454,7 @@
         lead.telefone = await ask(tok, 'Qual o seu telefone ou WhatsApp?', 'phone');
 
         await say(tok, 'Posso enviar estes dados ao Comercial da Tattica? Eles usam só para retornar o seu contato. Não envie documentos por aqui.');
-        const ok = await choose(tok, ['Autorizo e quero enviar', 'Cancelar']);
+        const ok = await choose(tok, ['Autorizo e quero enviar', { label: 'Ler a política de privacidade', href: 'privacidade.html' }, 'Cancelar']);
         if (ok.label === 'Cancelar') { await say(tok, 'Tudo bem, nada foi enviado.'); return menu(tok, false); }
 
         lead.prioridade = lead.assembleia.startsWith('Sim') ? 'Alta' : lead.assembleia.startsWith('Vamos') ? 'Média' : 'Normal';
@@ -417,25 +462,74 @@
         lead.origem = location.pathname;
         lead.criadoEm = new Date().toISOString();
 
-        let registrado = false;
-        if (CFG.appsScriptUrl) {
-            try {
-                await fetch(CFG.appsScriptUrl, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(lead) });
-                registrado = true;
-            } catch (_) { registrado = false; }
-        }
+        let situacao = await registrarPedido(lead);
         alive(tok);
 
         const texto = mensagemComercial(lead);
 
-        await say(tok, registrado
+        if (situacao === 'falhou') {
+            for (;;) {
+                await say(tok, 'Não consegui confirmar o registro do pedido por aqui. Para garantir que o Comercial receba, envie pelo WhatsApp: a mensagem já está pronta.');
+                const r = await choose(tok, [{ label: 'Enviar ao Comercial pelo WhatsApp', href: wa(texto) }, 'Tentar enviar de novo', 'Voltar ao início']);
+                if (r.label.startsWith('Voltar')) return menu(tok, false);
+                setStatus('digitando…');
+                const typing = addTyping();
+                situacao = await registrarPedido(lead);
+                alive(tok);
+                typing.remove();
+                setStatus('Online');
+                if (situacao !== 'falhou') break;
+            }
+        }
+
+        await say(tok, situacao === 'confirmado'
             ? 'Pedido registrado! O Comercial recebe os seus dados.'
             : 'Pedido pronto!');
         await say(tok, dentroDoHorario()
             ? 'Toque no botão para enviar a mensagem ao Comercial pelo WhatsApp. Eles atendem agora.'
             : 'O Comercial atende de segunda a sexta, das 8h às 18h. Envie a mensagem pelo WhatsApp e eles respondem no próximo dia útil.');
-        await choose(tok, [{ label: 'Enviar ao Comercial pelo WhatsApp', href: wa(texto) }, 'Voltar ao início']);
+        await say(tok, lead.pontos.length
+            ? 'Pontos que o Comercial vai avaliar com vocês: ' + lead.pontos.join('; ') + '.'
+            : 'Pela sua resposta, não há pendências a avaliar agora. O Comercial confirma os detalhes na proposta.');
+        let resumoFeito = false;
+        for (;;) {
+            const r = await choose(tok, [
+                { label: 'Enviar ao Comercial pelo WhatsApp', href: wa(texto) },
+                ...(resumoFeito ? [] : ['Copiar resumo para a assembleia']),
+                'Voltar ao início'
+            ]);
+            if (r.label.startsWith('Voltar')) break;
+            resumoFeito = true;
+            const resumo = resumoAssembleia(lead);
+            let copiou = false;
+            try { await navigator.clipboard.writeText(resumo); copiou = true; } catch (_) { /* sem permissão: mostra o texto */ }
+            await say(tok, copiou ? 'Resumo copiado! Cole no documento da assembleia.' : 'Não consegui copiar sozinho. Selecione o texto abaixo e copie:', ...(copiou ? [] : [resumo]));
+        }
         return menu(tok, false);
+    }
+
+    /* Envia o pedido ao script do Google e LÊ a resposta, em vez de assumir que deu certo.
+       Retorna 'confirmado', 'falhou' ou 'sem-planilha' (quando não há script configurado).
+       O Content-Type text/plain evita a verificação prévia (preflight) do navegador. */
+    async function registrarPedido(lead) {
+        if (!CFG.appsScriptUrl) return 'sem-planilha';
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), 20000);
+        try {
+            const r = await fetch(CFG.appsScriptUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(lead),
+                signal: ctrl.signal
+            });
+            if (!r.ok) return 'falhou';
+            const resposta = await r.json();
+            return resposta && resposta.ok === true ? 'confirmado' : 'falhou';
+        } catch (_) {
+            return 'falhou';
+        } finally {
+            clearTimeout(timer);
+        }
     }
 
     /* ---------- Abrir, fechar, recomeçar ---------- */
@@ -449,11 +543,18 @@
 
     const hint = root.querySelector('.chat__hint');
     let hintTimer;
+    /* O balão fica à esquerda do botão do chat, para nunca cobrir o botão de voltar ao topo (acima dele) */
+    const posicionarHint = () => {
+        const r = launcher.getBoundingClientRect();
+        hint.style.right = `${Math.round(window.innerWidth - r.left + 12)}px`;
+        hint.style.bottom = `${Math.round(window.innerHeight - r.bottom)}px`;
+    };
     const hideHint = () => { clearTimeout(hintTimer); hint.classList.remove('is-visible'); setTimeout(() => { hint.hidden = true; }, 300); };
     if (!reduceMotion) {
         setTimeout(() => {
             if (!panel.hidden) return;
             hint.hidden = false;
+            posicionarHint();
             requestAnimationFrame(() => hint.classList.add('is-visible'));
             hintTimer = setTimeout(hideHint, 9000);
         }, 4000);

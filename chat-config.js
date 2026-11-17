@@ -52,6 +52,10 @@ window.TATTICA_CHAT = {
         { tema: 'Instalação e estrutura', p: 'Precisa de internet?', r: 'Sim. É preciso uma conexão por fibra óptica de no mínimo 10 Mb full. A contratação dessa internet é responsabilidade do condomínio, e o Comercial orienta como fazer.' },
         { tema: 'Instalação e estrutura', p: 'Posso usar as câmeras que já tenho?', r: 'Em muitos casos, sim. A infraestrutura existente é avaliada para verificar a compatibilidade com a operação.' },
 
+        { tema: 'Torre de Vigilância', p: 'O que é a Torre de Vigilância?', r: 'É uma torre de monitoramento instalada na calçada ou na área externa do condomínio e ligada à central da Tattica. Tem 4 câmeras, uma para cada lado, que juntas dão visão de 360° do entorno.' },
+        { tema: 'Torre de Vigilância', p: 'A torre tem sirene?', r: 'Sim. Um botão de emergência dispara a sirene da própria torre.' },
+        { tema: 'Torre de Vigilância', p: 'Dá para falar com a Tattica pela torre?', r: 'Sim. A torre tem interfone para falar direto com a Tattica.' },
+
         { tema: 'Aplicativo e tecnologia', p: 'O que o aplicativo faz?', r: 'O Tattica Center permite abrir portões por QR-Code, enviar chave virtual para visitantes, agendar mudanças e áreas comuns, cadastrar moradores e ver as câmeras.' },
         { tema: 'Aplicativo e tecnologia', p: 'O condomínio vê as câmeras?', r: 'Sim. As câmeras podem ser vistas pelo aplicativo Tattica Center, conforme a estrutura do condomínio.' },
         { tema: 'Aplicativo e tecnologia', p: 'O sistema é da própria Tattica?', r: 'Sim. A Tattica usa software e sistemas próprios e desenvolve novas tecnologias, como a abertura pelo CarPlay na central multimídia do carro.' }
@@ -60,18 +64,19 @@ window.TATTICA_CHAT = {
     encaminhar: 'Essa informação é tratada diretamente pelo nosso Comercial, que consegue explicar com detalhes. Quer que eu envie o seu pedido para eles?',
     encaminharTitulos: ['Contrato e valores', 'Como é calculada a economia', 'Outro assunto'],
 
-    /* Menu "Sou morador", baseado no Guia do Aplicativo 2.0 */
+    /* Menu "Sou morador", baseado no Guia do Aplicativo 2.0.
+       video: link https do tutorial em vídeo (por exemplo, YouTube "não listado"). Vazio = sem botão de vídeo. */
     morador: [
-        { p: 'Baixar o aplicativo', r: 'Procure por "Tattica Center" na Play Store (Android) ou na App Store (iPhone) e toque em Instalar ou Obter.' },
-        { p: 'Primeiro acesso e cadastro', r: 'Abra o app e toque em "Cadastre-se". Digite o e-mail cadastrado no sistema da Tattica, abra a mensagem que chegar no seu e-mail, clique no link, crie a senha, confirme e toque em confirmar.\n\nNão chegou? Veja o spam e a lixeira e confira se o e-mail é o mesmo do cadastro. Se não tiver e-mail, use "Não possui e-mail" na tela de cadastro e siga as instruções.' },
-        { p: 'Esqueci a senha', r: 'Na tela de login, toque em "Esqueceu sua senha?", informe o e-mail cadastrado no sistema, abra o link que receber e digite a nova senha duas vezes.' },
-        { p: 'Abrir portas e portões', r: 'Na página "Acessos", escolha a porta ou o portão. Na parte de cima da tela você vê a câmera do acesso em tempo real antes de enviar o comando.' },
-        { p: 'Ver as câmeras', r: 'Na tela inicial, toque nas três barras no canto superior esquerdo e escolha "Câmeras" para ver as imagens do condomínio em tempo real.' },
-        { p: 'Adicionar uma pessoa ao apartamento', r: 'No início, toque nas três barras no canto superior esquerdo e siga o passo a passo para cadastrar novos moradores no seu apartamento. Quanto mais informações você preencher, melhor.' },
-        { p: 'Cadastro facial', r: 'O morador responsável cadastra o próprio rosto e o dos moradores vinculados a ele. O morador não responsável cadastra só o próprio. Na tela, toque em "Cadastrar facial".\n\nPara a foto: sem óculos, boné, chapéu ou qualquer coisa cobrindo o rosto, com boa iluminação e, de preferência, fundo neutro.' },
-        { p: 'Liberação provisória', r: 'Permite dar acesso temporário a uma pessoa por até 30 dias. Em "Adicionar Liberação", preencha nome, descrição e o documento pedido no próprio app, escolha data de início e fim e toque em "Salvar". Para mais de 30 dias, fale com o Setor Administrativo.\n\nPor segurança, não envie documentos por este chat.' },
-        { p: 'Chave virtual para visitante', r: 'Em "Adicionar Liberação", ative "Enviar Chave Virtual", defina quantos acessos são permitidos (0 = ilimitado) e o horário de início e fim, e toque em "Salvar". Depois é só compartilhar o link com a pessoa. Fora do horário definido, a chave não abre.' },
-        { p: 'Reservas e agendamentos', r: 'Para reservar uma área comum, toque em "Reservas", depois no "+", escolha a área e o dia e preencha os dados. Em "Meus Agendamentos" você consulta e edita data, horário, status e a lista de convidados. Leia as normas do condomínio, que ficam no início da página, antes de criar.' },
-        { p: 'Pedir imagens das câmeras', r: 'As imagens ficam guardadas por 15 dias, conforme o contrato, e só o síndico responsável pode solicitá-las. Quanto antes o pedido for feito, melhor. Fale com a Central.' }
+        { p: 'Baixar o aplicativo', r: 'Procure por "Tattica Center" na Play Store (Android) ou na App Store (iPhone) e toque em Instalar ou Obter.', video: '' },
+        { p: 'Primeiro acesso e cadastro', r: 'Abra o app e toque em "Cadastre-se". Digite o e-mail cadastrado no sistema da Tattica, abra a mensagem que chegar no seu e-mail, clique no link, crie a senha, confirme e toque em confirmar.\n\nNão chegou? Veja o spam e a lixeira e confira se o e-mail é o mesmo do cadastro. Se não tiver e-mail, use "Não possui e-mail" na tela de cadastro e siga as instruções.', video: '' },
+        { p: 'Esqueci a senha', r: 'Na tela de login, toque em "Esqueceu sua senha?", informe o e-mail cadastrado no sistema, abra o link que receber e digite a nova senha duas vezes.', video: '' },
+        { p: 'Abrir portas e portões', r: 'Na página "Acessos", escolha a porta ou o portão. Na parte de cima da tela você vê a câmera do acesso em tempo real antes de enviar o comando.', video: '' },
+        { p: 'Ver as câmeras', r: 'Na tela inicial, toque nas três barras no canto superior esquerdo e escolha "Câmeras" para ver as imagens do condomínio em tempo real.', video: '' },
+        { p: 'Adicionar uma pessoa ao apartamento', r: 'No início, toque nas três barras no canto superior esquerdo e siga o passo a passo para cadastrar novos moradores no seu apartamento. Quanto mais informações você preencher, melhor.', video: '' },
+        { p: 'Cadastro facial', r: 'O morador responsável cadastra o próprio rosto e o dos moradores vinculados a ele. O morador não responsável cadastra só o próprio. Na tela, toque em "Cadastrar facial".\n\nPara a foto: sem óculos, boné, chapéu ou qualquer coisa cobrindo o rosto, com boa iluminação e, de preferência, fundo neutro.', video: '' },
+        { p: 'Liberação provisória', r: 'Permite dar acesso temporário a uma pessoa por até 30 dias. Em "Adicionar Liberação", preencha nome, descrição e o documento pedido no próprio app, escolha data de início e fim e toque em "Salvar". Para mais de 30 dias, fale com o Setor Administrativo.\n\nPor segurança, não envie documentos por este chat.', video: '' },
+        { p: 'Chave virtual para visitante', r: 'Em "Adicionar Liberação", ative "Enviar Chave Virtual", defina quantos acessos são permitidos (0 = ilimitado) e o horário de início e fim, e toque em "Salvar". Depois é só compartilhar o link com a pessoa. Fora do horário definido, a chave não abre.', video: '' },
+        { p: 'Reservas e agendamentos', r: 'Para reservar uma área comum, toque em "Reservas", depois no "+", escolha a área e o dia e preencha os dados. Em "Meus Agendamentos" você consulta e edita data, horário, status e a lista de convidados. Leia as normas do condomínio, que ficam no início da página, antes de criar.', video: '' },
+        { p: 'Pedir imagens das câmeras', r: 'As imagens ficam guardadas por 15 dias, conforme o contrato, e só o síndico responsável pode solicitá-las. Quanto antes o pedido for feito, melhor. Fale com a Central.', video: '' }
     ]
 };
