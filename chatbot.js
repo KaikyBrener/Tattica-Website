@@ -454,7 +454,7 @@
         lead.telefone = await ask(tok, 'Qual o seu telefone ou WhatsApp?', 'phone');
 
         await say(tok, 'Posso enviar estes dados ao Comercial da Tattica? Eles usam só para retornar o seu contato. Não envie documentos por aqui.');
-        const ok = await choose(tok, ['Autorizo e quero enviar', 'Cancelar']);
+        const ok = await choose(tok, ['Autorizo e quero enviar', { label: 'Ler a política de privacidade', href: 'privacidade.html' }, 'Cancelar']);
         if (ok.label === 'Cancelar') { await say(tok, 'Tudo bem, nada foi enviado.'); return menu(tok, false); }
 
         lead.prioridade = lead.assembleia.startsWith('Sim') ? 'Alta' : lead.assembleia.startsWith('Vamos') ? 'Média' : 'Normal';
