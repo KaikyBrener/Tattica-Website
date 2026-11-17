@@ -222,6 +222,43 @@
         return h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite';
     }
 
+    /* Triagem informativa: só aponta o que o Comercial precisa confirmar. Não promete nem nega nada. */
+    function pontosAvaliar(l) {
+        const p = [];
+        if (l.internet === 'Pode contratar') p.push('contratação da fibra óptica (mín. 10 Mb)');
+        if (l.internet === 'Não sei') p.push('internet: confirmar se há fibra óptica de no mínimo 10 Mb');
+        if (l.interfone === 'Não') p.push('interfone sem cabeamento: avaliar a estrutura');
+        if (l.interfone === 'Não sei') p.push('cabeamento do interfone: confirmar');
+        if (l.estrutura === 'Sim') p.push('câmeras ou acesso existentes: avaliar compatibilidade');
+        return p;
+    }
+
+    /* Resumo para o síndico levar à assembleia. Só usa fatos já aprovados no FAQ. */
+    function resumoAssembleia(l) {
+        const blocos = l.blocos === '1' ? '1 bloco' : l.blocos === '5 ou mais' ? '5 ou mais blocos' : `${l.blocos} blocos`;
+        return [
+            'RESUMO PARA ASSEMBLEIA: PORTARIA VIRTUAL TATTICA',
+            '',
+            'Dados do condomínio',
+            `- Localização: ${l.local}`,
+            `- Porte: ${blocos}, cerca de ${l.unidades} unidades`,
+            `- Portaria atual: ${l.portaria.toLowerCase()}`,
+            '',
+            'Pauta sugerida',
+            '- Apresentação da proposta de portaria virtual da Tattica.',
+            '- Deliberação sobre a contratação, conforme a convenção do condomínio.',
+            '',
+            'Pontos que o Comercial esclarece',
+            '- Implantação: geralmente cerca de 2 meses, conforme o condomínio.',
+            '- Internet: fibra óptica de no mínimo 10 Mb full, contratada pelo condomínio.',
+            '- Cabeamento do interfone existente é aproveitado; serviços de estrutura (alvenaria, tubulação, gesso) são avaliados à parte.',
+            '- Imagens das câmeras guardadas por 15 dias, conforme o contrato.',
+            '- Valores: apresentados na proposta comercial.',
+            '',
+            `Comercial Tattica: segunda a sexta, das 8h às 18h. Telefone ${CFG.contatos[0].texto}.`
+        ].join('\n');
+    }
+
     /* Mensagem profissional enviada ao Comercial pelo WhatsApp */
     function mensagemComercial(l) {
         const pedido = {
@@ -246,6 +283,8 @@
             `*Portaria atual:* ${l.portaria.toLowerCase()}`,
             `*Câmeras ou controle de acesso:* ${estrutura}`,
             `*Assembleia:* ${assembleia}`,
+            `*Internet (fibra 10 Mb):* ${l.internet.toLowerCase()}`,
+            `*Cabeamento do interfone:* ${l.interfone.toLowerCase()}`,
             '',
             'Aguardo o retorno de vocês. Desde já, agradeço a atenção.'
         ].join('\n');
@@ -403,6 +442,11 @@
         lead.portaria = (await choose(tok, ['Portaria física (porteiros)', 'Portaria terceirizada', 'Portaria virtual', 'Não tem portaria'])).label;
         await say(tok, 'O condomínio já tem câmeras ou controle de acesso?');
         lead.estrutura = (await choose(tok, ['Sim', 'Não', 'Não sei'])).label;
+        await say(tok, 'O condomínio tem, ou pode contratar, internet por fibra óptica de no mínimo 10 Mb? Essa contratação fica por conta do condomínio.');
+        lead.internet = (await choose(tok, ['Já tem fibra óptica', 'Pode contratar', 'Não sei'])).label;
+        await say(tok, 'O interfone atual tem cabeamento? A proposta aproveita o cabeamento que já existe.');
+        lead.interfone = (await choose(tok, ['Sim', 'Não', 'Não sei'])).label;
+        lead.pontos = pontosAvaliar(lead);
         lead.local = await ask(tok, 'Qual o bairro e a cidade?');
         await say(tok, 'Já existe assembleia marcada para decidir sobre a portaria?');
         lead.assembleia = (await choose(tok, ['Sim, já marcada', 'Vamos marcar', 'Sem previsão'])).label;
@@ -444,7 +488,23 @@
         await say(tok, dentroDoHorario()
             ? 'Toque no botão para enviar a mensagem ao Comercial pelo WhatsApp. Eles atendem agora.'
             : 'O Comercial atende de segunda a sexta, das 8h às 18h. Envie a mensagem pelo WhatsApp e eles respondem no próximo dia útil.');
-        await choose(tok, [{ label: 'Enviar ao Comercial pelo WhatsApp', href: wa(texto) }, 'Voltar ao início']);
+        await say(tok, lead.pontos.length
+            ? 'Pontos que o Comercial vai avaliar com vocês: ' + lead.pontos.join('; ') + '.'
+            : 'Pela sua resposta, não há pendências a avaliar agora. O Comercial confirma os detalhes na proposta.');
+        let resumoFeito = false;
+        for (;;) {
+            const r = await choose(tok, [
+                { label: 'Enviar ao Comercial pelo WhatsApp', href: wa(texto) },
+                ...(resumoFeito ? [] : ['Copiar resumo para a assembleia']),
+                'Voltar ao início'
+            ]);
+            if (r.label.startsWith('Voltar')) break;
+            resumoFeito = true;
+            const resumo = resumoAssembleia(lead);
+            let copiou = false;
+            try { await navigator.clipboard.writeText(resumo); copiou = true; } catch (_) { /* sem permissão: mostra o texto */ }
+            await say(tok, copiou ? 'Resumo copiado! Cole no documento da assembleia.' : 'Não consegui copiar sozinho. Selecione o texto abaixo e copie:', ...(copiou ? [] : [resumo]));
+        }
         return menu(tok, false);
     }
 
