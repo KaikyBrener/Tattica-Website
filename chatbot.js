@@ -356,7 +356,8 @@
         if (e.label === 'Falar com um atendente') return atendente(tok);
         const item = CFG.morador.find(m => m.p === e.label);
         await say(tok, item.r);
-        const r = await choose(tok, ['Outro assunto de morador', 'Falar com um atendente', 'Voltar ao início']);
+        const video = /^https:\/\//.test(item.video || '') ? [{ label: 'Assistir ao vídeo tutorial', href: item.video }] : [];
+        const r = await choose(tok, [...video, 'Outro assunto de morador', 'Falar com um atendente', 'Voltar ao início']);
         if (r.label.startsWith('Outro')) return morador(tok);
         if (r.label.startsWith('Falar')) return atendente(tok);
         return menu(tok, false);
