@@ -530,6 +530,123 @@ h3 {
 .ticks .icon { margin-top: 1px; color: var(--blue-300); }
 .ticks strong { color: var(--white); font-weight: 600; }
 
+/* ---------- Torre de Vigilância ---------- */
+.torre {
+    display: grid;
+    grid-template-columns: minmax(0, 6fr) minmax(0, 6fr);
+    align-items: center;
+    gap: clamp(40px, 7vw, 104px);
+}
+/* palco azul-marinho com a mesma grade de monitores do hero */
+.torre__stage {
+    position: relative;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    padding: clamp(32px, 5vw, 56px) 16px;
+    border-radius: var(--r-lg);
+    background:
+        radial-gradient(60% 45% at 50% 18%, rgba(8, 127, 245, .38), transparent 70%),
+        linear-gradient(180deg, var(--navy-800), var(--navy-950));
+}
+.torre__stage::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(255, 255, 255, .05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, .05) 1px, transparent 1px);
+    background-size: 48px 48px;
+    -webkit-mask-image: linear-gradient(180deg, #000 30%, transparent 95%);
+    mask-image: linear-gradient(180deg, #000 30%, transparent 95%);
+    pointer-events: none;
+}
+/* sombra no chão onde a torre apoia */
+.torre__stage::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: clamp(26px, 4.4vw, 50px);
+    width: 150px;
+    height: 18px;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, rgba(0, 0, 0, .55), transparent);
+    transform: translateX(-50%);
+    pointer-events: none;
+}
+.torre__figure { position: relative; z-index: 1; }
+.torre__figure img {
+    display: block;
+    width: auto;
+    height: clamp(380px, 52vw, 580px);
+    filter: drop-shadow(0 18px 24px rgba(0, 0, 0, .35));
+}
+.torre__callout {
+    position: absolute;
+    top: var(--y);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--white);
+    font-family: var(--font-display);
+    font-size: .9rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.torre__callout::before {
+    content: '';
+    flex: 0 0 auto;
+    width: clamp(28px, 4vw, 56px);
+    height: 1px;
+    background: var(--blue-300);
+}
+.torre__callout::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--blue-300);
+    box-shadow: 0 0 0 4px rgba(143, 194, 255, .22);
+    transform: translateY(-50%);
+}
+.torre__callout--right { left: var(--x, 72%); }
+.torre__callout--right::after { left: -3px; }
+.torre__callout--left { right: var(--x, 72%); flex-direction: row-reverse; }
+.torre__callout--left::after { right: -3px; }
+.torre__copy h2 { margin-bottom: 20px; }
+.torre__copy > p { max-width: 52ch; color: var(--muted); }
+.torre__copy .btn { margin-top: 32px; }
+/* fotos da torre instalada */
+.torre-ambiente {
+    display: grid;
+    grid-template-columns: minmax(0, 4fr) minmax(0, 4fr) minmax(0, 4fr);
+    align-items: end;
+    gap: clamp(28px, 4vw, 56px);
+    margin-top: clamp(56px, 7vw, 96px);
+    padding-top: clamp(40px, 5vw, 64px);
+    border-top: 1px solid var(--line);
+}
+.torre-ambiente__lead { align-self: center; }
+.torre-ambiente__lead h3 {
+    margin-bottom: 12px;
+    font-size: clamp(1.35rem, 1rem + 1vw, 1.75rem);
+    line-height: 1.15;
+}
+.torre-ambiente__lead p { max-width: 34ch; color: var(--muted); }
+.torre-ambiente__foto { padding: 14px; }
+.torre-ambiente__foto .viewfinder img { aspect-ratio: 2 / 3; }
+.torre-ambiente__foto .viewfinder::before { --c: var(--blue-600); }
+.torre-ambiente__foto figcaption {
+    margin-top: 22px;
+    color: var(--muted);
+    font-size: .9rem;
+}
+.ticks--light li { color: var(--muted); }
+.ticks--light .icon { color: var(--blue-700); }
+.ticks--light strong { color: var(--ink); }
+
 /* ---------- Benefícios ---------- */
 .claim {
     margin-top: 32px;
@@ -814,9 +931,12 @@ body.quote-modal-open { overflow: hidden; }
     .split,
     .app,
     .central,
+    .torre,
     .contact,
     .why { grid-template-columns: 1fr; }
     .split--sticky .split__lead { position: static; }
+    .torre-ambiente { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .torre-ambiente__lead { grid-column: 1 / -1; }
     .split__lead p { max-width: 60ch; }
 
     .steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -860,6 +980,14 @@ body.quote-modal-open { overflow: hidden; }
     .main-nav { padding-inline: 20px; }
 
     .specs .spec { grid-template-columns: 1fr; gap: 6px; }
+    .torre__callout { font-size: .8rem; gap: 6px; }
+    .torre__callout::before { width: 18px; }
+    .torre__copy .btn { width: 100%; }
+    .torre-ambiente { gap: 8px 22px; }
+    .torre-ambiente__lead { margin-bottom: 8px; }
+    .torre-ambiente__foto { padding: 10px; }
+    .torre-ambiente__foto .viewfinder::before { inset: -10px; }
+    .torre-ambiente__foto figcaption { margin-top: 16px; font-size: .82rem; }
     .specs dd { padding-left: 38px; }
     .why__list { grid-template-columns: 1fr; }
     .claim { padding: 24px; }
