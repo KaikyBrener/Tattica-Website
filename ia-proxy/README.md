@@ -13,7 +13,7 @@ O `.dev.vars` (com a chave) não vai para o git. Para criá-lo, dentro de `ia-pr
 .\configurar-local.ps1   # uma vez: cria o .dev.vars com as chaves
 .\iniciar-local.ps1      # sempre: sobe o proxy na porta 8787, sem atalhos de teclado
 ```
-Em outro terminal, na pasta do projeto: `npx serve -l 5500 .` e abra `http://localhost:5500/Index.html`.
+Em outro terminal, na pasta do projeto: `npx serve -l 5500 .` e abra `http://localhost:5500/index.html`.
 Em `localhost` o chat usa sozinho o endereço `iaUrlLocal` (`http://127.0.0.1:8787`), sem mexer no `iaUrl`.
 O `iniciar-local.ps1` libera a porta 8787 se um wrangler antigo ficou preso nela e desliga os atalhos do wrangler (a tecla `t` abria um túnel público).
 

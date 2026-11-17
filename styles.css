@@ -1024,3 +1024,5 @@ body.quote-modal-open { overflow: hidden; }
 .legal li { margin-bottom: 8px; }
 .legal a { text-decoration: underline; text-underline-offset: 3px; }
 .legal__meta { color: var(--muted); }
+
+.footer__bottom a { display: inline-block; padding-block: 10px; text-decoration: underline; text-underline-offset: 3px; }
