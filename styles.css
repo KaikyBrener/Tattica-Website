@@ -884,7 +884,7 @@ body.quote-modal-open { overflow: hidden; }
 }
 
 /* ---------- Página de privacidade ---------- */
-.legal-top { background: var(--surface, #fff); border-bottom: 1px solid var(--line, rgba(0,0,0,.1)); }
+.legal-top { background: var(--navy-950); color: var(--on-dark); }
 .legal-top__inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 16px; }
 .legal-top__back { font-weight: 600; text-decoration: underline; text-underline-offset: 4px; }
 .legal { padding-block: clamp(40px, 6vw, 80px); }
