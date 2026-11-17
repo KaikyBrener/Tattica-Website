@@ -882,3 +882,17 @@ body.quote-modal-open { overflow: hidden; }
         transition-duration: .01ms !important;
     }
 }
+
+/* ---------- Página de privacidade ---------- */
+.legal-top { background: var(--surface, #fff); border-bottom: 1px solid var(--line, rgba(0,0,0,.1)); }
+.legal-top__inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 16px; }
+.legal-top__back { font-weight: 600; text-decoration: underline; text-underline-offset: 4px; }
+.legal { padding-block: clamp(40px, 6vw, 80px); }
+.legal__wrap { max-width: 72ch; }
+.legal h1 { margin-bottom: 16px; }
+.legal h2 { font-size: 1.25rem; margin: 36px 0 10px; }
+.legal p, .legal ul { margin-bottom: 14px; }
+.legal ul { padding-left: 1.2em; list-style: disc; }
+.legal li { margin-bottom: 8px; }
+.legal a { text-decoration: underline; text-underline-offset: 3px; }
+.legal__meta { color: var(--muted); }
