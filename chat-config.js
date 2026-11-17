@@ -52,6 +52,10 @@ window.TATTICA_CHAT = {
         { tema: 'Instalação e estrutura', p: 'Precisa de internet?', r: 'Sim. É preciso uma conexão por fibra óptica de no mínimo 10 Mb full. A contratação dessa internet é responsabilidade do condomínio, e o Comercial orienta como fazer.' },
         { tema: 'Instalação e estrutura', p: 'Posso usar as câmeras que já tenho?', r: 'Em muitos casos, sim. A infraestrutura existente é avaliada para verificar a compatibilidade com a operação.' },
 
+        { tema: 'Torre de Vigilância', p: 'O que é a Torre de Vigilância?', r: 'É uma torre de monitoramento instalada na calçada ou na área externa do condomínio e ligada à central da Tattica. Tem 4 câmeras, uma para cada lado, que juntas dão visão de 360° do entorno.' },
+        { tema: 'Torre de Vigilância', p: 'A torre tem sirene?', r: 'Sim. Um botão de emergência dispara a sirene da própria torre.' },
+        { tema: 'Torre de Vigilância', p: 'Dá para falar com a Tattica pela torre?', r: 'Sim. A torre tem interfone para falar direto com a Tattica.' },
+
         { tema: 'Aplicativo e tecnologia', p: 'O que o aplicativo faz?', r: 'O Tattica Center permite abrir portões por QR-Code, enviar chave virtual para visitantes, agendar mudanças e áreas comuns, cadastrar moradores e ver as câmeras.' },
         { tema: 'Aplicativo e tecnologia', p: 'O condomínio vê as câmeras?', r: 'Sim. As câmeras podem ser vistas pelo aplicativo Tattica Center, conforme a estrutura do condomínio.' },
         { tema: 'Aplicativo e tecnologia', p: 'O sistema é da própria Tattica?', r: 'Sim. A Tattica usa software e sistemas próprios e desenvolve novas tecnologias, como a abertura pelo CarPlay na central multimídia do carro.' }
