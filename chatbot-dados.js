@@ -50,7 +50,7 @@ window.TATTICA_BOT = {
         },
 
         sindico: {
-            texto: 'A Tattica opera portaria virtual com central de monitoramento 24 horas, controle de acesso, câmeras e rondas. Posso preparar um pedido de orçamento para o seu condomínio.',
+            texto: 'A Tattica opera portaria virtual com central de monitoramento 24 horas, controle de acesso e câmeras. Posso preparar um pedido de orçamento para o seu condomínio.',
             opcoes: [
                 { rotulo: 'Quero um orçamento', acao: 'lead', estilo: 'primary' },
                 { rotulo: 'Como funciona a portaria virtual', vai: 'comoFunciona' },
@@ -69,7 +69,7 @@ window.TATTICA_BOT = {
         },
 
         solucoes: {
-            texto: 'São quatro frentes, operadas pela mesma equipe:\n• Portaria virtual\n• Controle de acesso (tags, biometria, QR Code e chaves virtuais)\n• Monitoramento por câmeras, acompanhado pela central\n• Rondas preventivas e ativas',
+            texto: 'São três frentes, operadas pela mesma equipe:\n• Portaria virtual\n• Controle de acesso (tags, biometria, QR Code e chaves virtuais)\n• Monitoramento por câmeras, acompanhado pela central',
             opcoes: [
                 { rotulo: 'Quero um orçamento', acao: 'lead', estilo: 'primary' },
                 { rotulo: 'Como funciona a portaria virtual', vai: 'comoFunciona' },
