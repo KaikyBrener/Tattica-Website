@@ -618,6 +618,31 @@ h3 {
 .torre__copy h2 { margin-bottom: 20px; }
 .torre__copy > p { max-width: 52ch; color: var(--muted); }
 .torre__copy .btn { margin-top: 32px; }
+/* fotos da torre instalada */
+.torre-ambiente {
+    display: grid;
+    grid-template-columns: minmax(0, 4fr) minmax(0, 4fr) minmax(0, 4fr);
+    align-items: end;
+    gap: clamp(28px, 4vw, 56px);
+    margin-top: clamp(56px, 7vw, 96px);
+    padding-top: clamp(40px, 5vw, 64px);
+    border-top: 1px solid var(--line);
+}
+.torre-ambiente__lead { align-self: center; }
+.torre-ambiente__lead h3 {
+    margin-bottom: 12px;
+    font-size: clamp(1.35rem, 1rem + 1vw, 1.75rem);
+    line-height: 1.15;
+}
+.torre-ambiente__lead p { max-width: 34ch; color: var(--muted); }
+.torre-ambiente__foto { padding: 14px; }
+.torre-ambiente__foto .viewfinder img { aspect-ratio: 2 / 3; }
+.torre-ambiente__foto .viewfinder::before { --c: var(--blue-600); }
+.torre-ambiente__foto figcaption {
+    margin-top: 22px;
+    color: var(--muted);
+    font-size: .9rem;
+}
 .ticks--light li { color: var(--muted); }
 .ticks--light .icon { color: var(--blue-700); }
 .ticks--light strong { color: var(--ink); }
@@ -910,6 +935,8 @@ body.quote-modal-open { overflow: hidden; }
     .contact,
     .why { grid-template-columns: 1fr; }
     .split--sticky .split__lead { position: static; }
+    .torre-ambiente { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .torre-ambiente__lead { grid-column: 1 / -1; }
     .split__lead p { max-width: 60ch; }
 
     .steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -956,6 +983,11 @@ body.quote-modal-open { overflow: hidden; }
     .torre__callout { font-size: .8rem; gap: 6px; }
     .torre__callout::before { width: 18px; }
     .torre__copy .btn { width: 100%; }
+    .torre-ambiente { gap: 8px 22px; }
+    .torre-ambiente__lead { margin-bottom: 8px; }
+    .torre-ambiente__foto { padding: 10px; }
+    .torre-ambiente__foto .viewfinder::before { inset: -10px; }
+    .torre-ambiente__foto figcaption { margin-top: 16px; font-size: .82rem; }
     .specs dd { padding-left: 38px; }
     .why__list { grid-template-columns: 1fr; }
     .claim { padding: 24px; }
