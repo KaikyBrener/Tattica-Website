@@ -483,11 +483,18 @@
 
     const hint = root.querySelector('.chat__hint');
     let hintTimer;
+    /* O balão fica à esquerda do botão do chat, para nunca cobrir o botão de voltar ao topo (acima dele) */
+    const posicionarHint = () => {
+        const r = launcher.getBoundingClientRect();
+        hint.style.right = `${Math.round(window.innerWidth - r.left + 12)}px`;
+        hint.style.bottom = `${Math.round(window.innerHeight - r.bottom)}px`;
+    };
     const hideHint = () => { clearTimeout(hintTimer); hint.classList.remove('is-visible'); setTimeout(() => { hint.hidden = true; }, 300); };
     if (!reduceMotion) {
         setTimeout(() => {
             if (!panel.hidden) return;
             hint.hidden = false;
+            posicionarHint();
             requestAnimationFrame(() => hint.classList.add('is-visible'));
             hintTimer = setTimeout(hideHint, 9000);
         }, 4000);
