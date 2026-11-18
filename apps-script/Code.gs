@@ -14,6 +14,8 @@ const CONFIG = {
   // Expediente do Comercial (segunda a sexta) e prazo do lembrete, em horas úteis sem contato
   HORARIO: { inicio: 8, fim: 18 },
   LEMBRETE_HORAS: { 'Alta': 2, 'Média': 4, 'Normal': 8 },
+  // Enquanto o status continuar "Novo", repete o lembrete a cada tantos minutos (dentro do expediente)
+  LEMBRETE_REPETIR_MIN: 30,
   PASSOS_ORCAMENTO: ['perfil', 'blocos', 'unidades', 'portaria', 'estrutura', 'internet', 'interfone', 'local', 'assembleia', 'nome', 'telefone', 'autorizacao'],
   CABECALHOS: [
     'data_hora',
@@ -370,7 +372,8 @@ function letraColuna(n) {
    LEMBRETE DE PEDIDO PARADO
    A cada 30 minutos, dentro do expediente, avisa por e-mail os pedidos
    ainda em "Novo" além do prazo (horas úteis: Alta 2h, Média 4h, Normal 8h).
-   Cada pedido gera um único lembrete.
+   Enquanto o status for "Novo", o lembrete se repete a cada LEMBRETE_REPETIR_MIN minutos.
+   A coluna lembrete_enviado guarda a data/hora do último aviso.
    ========================================================================= */
 function verificarPedidosParados() {
   const agora = new Date();
@@ -391,7 +394,8 @@ function verificarPedidosParados() {
   const parados = [];
   valores.forEach(function (linha, i) {
     if (String(linha[iStatus]).trim() !== CONFIG.STATUS[0]) return;
-    if (linha[iAviso]) return;
+    const ultimo = paraData(linha[iAviso]);
+    if (ultimo && (agora.getTime() - ultimo.getTime()) < (CONFIG.LEMBRETE_REPETIR_MIN - 5) * 60000) return;
     const criado = paraData(linha[0]);
     if (!criado) return;
     const prioridade = String(linha[iPrio] || 'Normal');
@@ -404,19 +408,46 @@ function verificarPedidosParados() {
   if (!parados.length) return;
 
   parados.sort(function (a, b) { return b.horas - a.horas; });
+  const horasTxt = function (p) { return p.horas.toFixed(1).replace('.', ',') + ' h úteis'; };
   const texto = ['Pedidos ainda sem contato (status "Novo") além do prazo:', ''].concat(parados.map(function (p) {
     return '- [' + p.prioridade + '] ' + textoPuro(p.nome) + ', ' + textoPuro(p.telefone) + ', ' + textoPuro(p.local) +
-      ' (' + p.horas.toFixed(1).replace('.', ',') + ' h úteis). WhatsApp: ' + p.link;
+      ' (' + horasTxt(p) + '). WhatsApp: ' + p.link;
   })).concat(['', 'Depois do contato, troque o status na planilha para parar os lembretes.']).join('\n');
+
+  const cores = { 'Alta': '#c62828', 'Média': '#e08a00', 'Normal': '#0a6be0' };
+  const cartoes = parados.map(function (p) {
+    const cor = cores[p.prioridade] || cores['Normal'];
+    return '<tr><td style="padding:0 0 12px">' +
+      '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #d9e2ef;border-left:5px solid ' + cor + ';border-radius:8px;background:#ffffff"><tr><td style="padding:14px 16px">' +
+      '<span style="display:inline-block;padding:2px 10px;border-radius:12px;background:' + cor + ';color:#ffffff;font-size:12px;font-weight:bold">' + escaparHtml(p.prioridade) + '</span> ' +
+      '<span style="color:#5b6b85;font-size:12px">sem contato há ' + escaparHtml(horasTxt(p)) + '</span>' +
+      '<div style="font-size:17px;font-weight:bold;color:#0f2140;margin:8px 0 2px">' + escaparHtml(textoPuro(p.nome)) + '</div>' +
+      '<div style="font-size:14px;color:#14233f">' + escaparHtml(textoPuro(p.telefone)) + '</div>' +
+      '<div style="font-size:14px;color:#5b6b85;margin-bottom:12px">' + escaparHtml(textoPuro(p.local)) + '</div>' +
+      '<a href="' + escaparHtml(p.link) + '" style="display:inline-block;padding:10px 18px;border-radius:6px;background:#1a7f3c;color:#ffffff;font-size:14px;font-weight:bold;text-decoration:none">Chamar no WhatsApp</a>' +
+      '</td></tr></table></td></tr>';
+  }).join('');
+  const html = '<div style="background:#f1f5fa;padding:24px 12px;font-family:Arial,Helvetica,sans-serif">' +
+    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto">' +
+    '<tr><td style="background:#0f2140;border-radius:8px 8px 0 0;padding:18px 20px;color:#ffffff;font-size:18px;font-weight:bold">Tattica | Pedidos sem contato</td></tr>' +
+    '<tr><td style="background:#e4eefb;padding:14px 20px;color:#14233f;font-size:14px">' + parados.length + ' pedido(s) em "Novo" além do prazo. Chame o cliente e depois troque o status na planilha para parar os lembretes.</td></tr>' +
+    '<tr><td style="padding:16px 0 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">' + cartoes + '</table></td></tr>' +
+    '<tr><td style="color:#5b6b85;font-size:12px;padding:8px 4px">Novo lembrete a cada ' + CONFIG.LEMBRETE_REPETIR_MIN + ' minutos no expediente, enquanto o status for "Novo".</td></tr>' +
+    '</table></div>';
 
   MailApp.sendEmail({
     to: CONFIG.EMAIL_DESTINO,
     subject: ('[Lembrete] ' + parados.length + ' pedido(s) de orçamento sem contato').replace(/[\r\n]+/g, ' '),
-    body: texto
+    body: texto,
+    htmlBody: html
   });
   parados.forEach(function (p) {
     aba.getRange(p.linha, iAviso + 1).setValue(Utilities.formatDate(agora, CONFIG.FUSO_HORARIO, 'dd/MM/yyyy HH:mm'));
   });
+}
+
+function escaparHtml(v) {
+  return String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 /** Aceita Date da planilha ou texto "dd/MM/yyyy HH:mm:ss" */
