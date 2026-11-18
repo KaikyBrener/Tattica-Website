@@ -180,10 +180,62 @@ function obterOuCriarAbaMetricas(ss) {
   }
   if (aba.getLastRow() === 0) {
     aba.appendRow(CONFIG.CABECALHOS_METRICAS);
-    aba.getRange(1, 1, 1, CONFIG.CABECALHOS_METRICAS.length).setFontWeight('bold');
-    aba.setFrozenRows(1);
+    try { formatarMetricas(aba); } catch (erro) { Logger.log('Visual das métricas não aplicado: ' + erro.message); }
   }
   return aba;
+}
+
+/** Visual da aba "Métricas": mesmo padrão da aba Pedidos */
+function formatarMetricas(aba) {
+  const n = CONFIG.CABECALHOS_METRICAS.length;
+  const total = Math.max(aba.getMaxRows(), 2);
+  const COR = { marinho: '#0f2140', zebra: '#f1f5fa', tinta: '#14233f' };
+  [150, 110, 190, 340].forEach(function (l, i) { aba.setColumnWidth(i + 1, l); });
+  aba.getRange(1, 1, total, n).setFontFamily('Arial').setFontSize(10).setFontColor(COR.tinta).setVerticalAlignment('middle');
+  aba.getBandings().forEach(function (b) { b.remove(); });
+  aba.getRange(1, 1, total, n).applyRowBanding(SpreadsheetApp.BandingTheme.LIGHT_GREY)
+    .setHeaderRowColor(COR.marinho).setFirstRowColor('#ffffff').setSecondRowColor(COR.zebra);
+  aba.getRange(1, 1, 1, n).setBackground(COR.marinho).setFontColor('#ffffff').setFontWeight('bold').setHorizontalAlignment('left');
+  aba.getRange(2, 1, total - 1, 1).setNumberFormat('dd/MM/yyyy HH:mm:ss');
+  aba.setRowHeight(1, 38);
+  aba.setFrozenRows(1);
+  const filtro = aba.getFilter();
+  if (filtro) filtro.remove();
+  aba.getRange(1, 1, Math.max(aba.getLastRow(), 2), n).createFilter();
+}
+
+/** Deixa as abas na ordem Painel, Pedidos, Métricas */
+function organizarAbas() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  [CONFIG.NOME_ABA_METRICAS, CONFIG.NOME_ABA, CONFIG.NOME_ABA_PAINEL].forEach(function (nome) {
+    const aba = ss.getSheetByName(nome);
+    if (aba) { ss.setActiveSheet(aba); ss.moveActiveSheet(1); }
+  });
+}
+
+/**
+ * Esconde (sem apagar) as abas de versões antigas do chat, deixando só Painel, Pedidos e Métricas.
+ * Para ver de novo: clique com o botão direito nas abas > "Mostrar planilhas ocultas".
+ */
+function ocultarAbasAntigas() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const usadas = [CONFIG.NOME_ABA, CONFIG.NOME_ABA_METRICAS, CONFIG.NOME_ABA_PAINEL];
+  const ocultas = [];
+  ss.getSheets().forEach(function (aba) {
+    if (usadas.indexOf(aba.getName()) === -1 && !aba.isSheetHidden() && ss.getSheets().length > usadas.length) {
+      aba.hideSheet();
+      ocultas.push(aba.getName());
+    }
+  });
+  Logger.log(ocultas.length ? 'Abas ocultadas: ' + ocultas.join(', ') : 'Nenhuma aba antiga encontrada.');
+}
+
+/** Formata tudo de uma vez: Pedidos, Métricas, Painel e ordem das abas */
+function formatarTudo() {
+  formatarPedidos();
+  formatarMetricas(obterOuCriarAbaMetricas(SpreadsheetApp.getActiveSpreadsheet()));
+  atualizarPainel();
+  organizarAbas();
 }
 
 /* =========================================================================
