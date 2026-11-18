@@ -6,8 +6,15 @@
  */
 const CONFIG = {
   NOME_ABA: 'Pedidos',
-  EMAIL_DESTINO: 'comercial@exemplo.com.br', // troque pelo e-mail do Comercial,
+  EMAIL_DESTINO: 'comercial@exemplo.com.br', // troque pelo e-mail do Comercial
   FUSO_HORARIO: 'America/Sao_Paulo',
+  NOME_ABA_METRICAS: 'Métricas',
+  NOME_ABA_PAINEL: 'Painel',
+  STATUS: ['Novo', 'Contatado', 'Proposta enviada', 'Fechado', 'Perdido'],
+  // Expediente do Comercial (segunda a sexta) e prazo do lembrete, em horas úteis sem contato
+  HORARIO: { inicio: 8, fim: 18 },
+  LEMBRETE_HORAS: { 'Alta': 2, 'Média': 4, 'Normal': 8 },
+  PASSOS_ORCAMENTO: ['perfil', 'blocos', 'unidades', 'portaria', 'estrutura', 'internet', 'interfone', 'local', 'assembleia', 'nome', 'telefone', 'autorizacao'],
   CABECALHOS: [
     'data_hora',
     'prioridade',
@@ -25,8 +32,11 @@ const CONFIG = {
     'link_whatsapp',
     'internet_fibra',
     'cabeamento_interfone',
-    'pontos_a_avaliar'
-  ]
+    'pontos_a_avaliar',
+    'status',
+    'lembrete_enviado'
+  ],
+  CABECALHOS_METRICAS: ['data_hora', 'sessao', 'evento', 'detalhe']
 };
 
 /**
@@ -58,6 +68,11 @@ function doPost(e) {
       return responderJson({ ok: false, erro: 'json invalido' });
     }
 
+    // Métricas anônimas do chat (sem nome nem telefone): vêm em lote
+    if (dados.tipo === 'eventos') {
+      return responderJson({ ok: true, gravados: gravarEventos(dados) });
+    }
+
     // Honeypot: se um campo oculto "site" vier preenchido, ignora em silêncio
     if (dados.site && String(dados.site).trim() !== '') {
       return responderJson({ ok: true });
@@ -87,7 +102,7 @@ function doPost(e) {
 
     // Ordem exata das colunas em CONFIG.CABECALHOS
     const novaLinha = [
-      dataHora,
+      new Date(),
       limparValor(prioridade),
       limparValor(dados.perfil),
       nome,
@@ -103,10 +118,13 @@ function doPost(e) {
       linkWhatsApp,
       limparValor(dados.internet),
       limparValor(dados.interfone),
-      limparValor(listaTexto(dados.pontos))
+      limparValor(listaTexto(dados.pontos)),
+      CONFIG.STATUS[0],
+      ''
     ];
 
     sheet.appendRow(novaLinha);
+    sheet.getRange(sheet.getLastRow(), 1).setNumberFormat('dd/MM/yyyy HH:mm:ss');
 
     // O pedido já está salvo; uma falha no e-mail não deve derrubar a resposta
     try {
@@ -124,6 +142,274 @@ function doPost(e) {
       lock.releaseLock();
     }
   }
+}
+
+/* =========================================================================
+   MÉTRICAS ANÔNIMAS DO CHAT
+   Recebe lotes de eventos (etapa do chat, clique em botão). Nunca recebe
+   nome, telefone nem texto digitado. O "sessao" é um código aleatório que
+   só vale enquanto a página fica aberta.
+   ========================================================================= */
+function gravarEventos(dados) {
+  const lista = Array.isArray(dados.eventos) ? dados.eventos.slice(0, 40) : [];
+  const linhas = [];
+  lista.forEach(function (ev) {
+    const evento = textoPuro(ev && ev.evento).slice(0, 40);
+    if (!evento) return;
+    const quando = ev.quando ? new Date(ev.quando) : new Date();
+    linhas.push([
+      isNaN(quando.getTime()) ? new Date() : quando,
+      limparValor(textoPuro(dados.sessao).slice(0, 16)),
+      limparValor(evento),
+      limparValor(textoPuro(ev.detalhe).slice(0, 80))
+    ]);
+  });
+  if (!linhas.length) return 0;
+  const aba = obterOuCriarAbaMetricas(SpreadsheetApp.getActiveSpreadsheet());
+  const inicio = aba.getLastRow() + 1;
+  aba.getRange(inicio, 1, linhas.length, 4).setValues(linhas);
+  aba.getRange(inicio, 1, linhas.length, 1).setNumberFormat('dd/MM/yyyy HH:mm:ss');
+  return linhas.length;
+}
+
+function obterOuCriarAbaMetricas(ss) {
+  let aba = ss.getSheetByName(CONFIG.NOME_ABA_METRICAS);
+  if (!aba) {
+    aba = ss.insertSheet(CONFIG.NOME_ABA_METRICAS);
+  }
+  if (aba.getLastRow() === 0) {
+    aba.appendRow(CONFIG.CABECALHOS_METRICAS);
+    aba.getRange(1, 1, 1, CONFIG.CABECALHOS_METRICAS.length).setFontWeight('bold');
+    aba.setFrozenRows(1);
+  }
+  return aba;
+}
+
+/* =========================================================================
+   CONFIGURAÇÃO ÚNICA
+   Rode "configurarTudo" uma vez no editor (e autorize). Ela atualiza o
+   cabeçalho, cria a lista de status, monta o painel e liga o lembrete.
+   ========================================================================= */
+function configurarTudo() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const pedidos = obterOuCriarAba(ss);
+  obterOuCriarAbaMetricas(ss);
+
+  // Lista suspensa de status (coluna "status") e cores por situação
+  const colStatus = colunaPedidos('status');
+  const regra = SpreadsheetApp.newDataValidation()
+    .requireValueInList(CONFIG.STATUS, true)
+    .setAllowInvalid(false)
+    .build();
+  pedidos.getRange(2, colStatus, 2000, 1).setDataValidation(regra);
+  const faixa = pedidos.getRange(2, colStatus, 2000, 1);
+  const cores = { 'Novo': '#fef0c7', 'Contatado': '#dbeafe', 'Proposta enviada': '#e0e7ff', 'Fechado': '#d1fadf', 'Perdido': '#f2f4f7' };
+  pedidos.setConditionalFormatRules(Object.keys(cores).map(function (nome) {
+    return SpreadsheetApp.newConditionalFormatRule()
+      .whenTextEqualTo(nome).setBackground(cores[nome]).setRanges([faixa]).build();
+  }));
+
+  atualizarPainel();
+  instalarGatilhos();
+  Logger.log('Pronto: status, painel e lembrete configurados.');
+}
+
+function instalarGatilhos() {
+  ScriptApp.getProjectTriggers().forEach(function (t) {
+    if (t.getHandlerFunction() === 'verificarPedidosParados') ScriptApp.deleteTrigger(t);
+  });
+  ScriptApp.newTrigger('verificarPedidosParados').timeBased().everyMinutes(30).create();
+}
+
+/** Número da coluna (1, 2, 3...) de um cabeçalho da aba Pedidos */
+function colunaPedidos(nome) {
+  return CONFIG.CABECALHOS.indexOf(nome) + 1;
+}
+
+function letraColuna(n) {
+  let letra = '';
+  while (n > 0) {
+    const resto = (n - 1) % 26;
+    letra = String.fromCharCode(65 + resto) + letra;
+    n = Math.floor((n - 1) / 26);
+  }
+  return letra;
+}
+
+/* =========================================================================
+   LEMBRETE DE PEDIDO PARADO
+   A cada 30 minutos, dentro do expediente, avisa por e-mail os pedidos
+   ainda em "Novo" além do prazo (horas úteis: Alta 2h, Média 4h, Normal 8h).
+   Cada pedido gera um único lembrete.
+   ========================================================================= */
+function verificarPedidosParados() {
+  const agora = new Date();
+  if (!dentroDoExpediente(agora)) return;
+
+  const aba = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CONFIG.NOME_ABA);
+  if (!aba || aba.getLastRow() < 2) return;
+
+  const total = aba.getLastRow() - 1;
+  const valores = aba.getRange(2, 1, total, CONFIG.CABECALHOS.length).getValues();
+  const iStatus = colunaPedidos('status') - 1;
+  const iAviso = colunaPedidos('lembrete_enviado') - 1;
+  const iPrio = colunaPedidos('prioridade') - 1;
+  const iNome = colunaPedidos('nome') - 1;
+  const iTel = colunaPedidos('telefone') - 1;
+  const iLocal = colunaPedidos('local') - 1;
+  const iLink = colunaPedidos('link_whatsapp') - 1;
+
+  const parados = [];
+  valores.forEach(function (linha, i) {
+    if (String(linha[iStatus]).trim() !== CONFIG.STATUS[0]) return;
+    if (linha[iAviso]) return;
+    const criado = paraData(linha[0]);
+    if (!criado) return;
+    const prioridade = String(linha[iPrio] || 'Normal');
+    const limite = CONFIG.LEMBRETE_HORAS[prioridade] || CONFIG.LEMBRETE_HORAS['Normal'];
+    const horas = horasUteisEntre(criado, agora);
+    if (horas >= limite) {
+      parados.push({ linha: i + 2, prioridade: prioridade, nome: linha[iNome], telefone: linha[iTel], local: linha[iLocal], link: linha[iLink], horas: horas });
+    }
+  });
+  if (!parados.length) return;
+
+  parados.sort(function (a, b) { return b.horas - a.horas; });
+  const texto = ['Pedidos ainda sem contato (status "Novo") além do prazo:', ''].concat(parados.map(function (p) {
+    return '- [' + p.prioridade + '] ' + textoPuro(p.nome) + ', ' + textoPuro(p.telefone) + ', ' + textoPuro(p.local) +
+      ' (' + p.horas.toFixed(1).replace('.', ',') + ' h úteis). WhatsApp: ' + p.link;
+  })).concat(['', 'Depois do contato, troque o status na planilha para parar os lembretes.']).join('\n');
+
+  MailApp.sendEmail({
+    to: CONFIG.EMAIL_DESTINO,
+    subject: ('[Lembrete] ' + parados.length + ' pedido(s) de orçamento sem contato').replace(/[\r\n]+/g, ' '),
+    body: texto
+  });
+  parados.forEach(function (p) {
+    aba.getRange(p.linha, iAviso + 1).setValue(Utilities.formatDate(agora, CONFIG.FUSO_HORARIO, 'dd/MM/yyyy HH:mm'));
+  });
+}
+
+/** Aceita Date da planilha ou texto "dd/MM/yyyy HH:mm:ss" */
+function paraData(valor) {
+  if (valor instanceof Date) return isNaN(valor.getTime()) ? null : valor;
+  const m = /^(\d{2})\/(\d{2})\/(\d{4})[ T](\d{2}):(\d{2})/.exec(String(valor || ''));
+  return m ? new Date(+m[3], +m[2] - 1, +m[1], +m[4], +m[5]) : null;
+}
+
+function dentroDoExpediente(data) {
+  const dia = Number(Utilities.formatDate(data, CONFIG.FUSO_HORARIO, 'u')); // 1 = segunda ... 7 = domingo
+  const hora = Number(Utilities.formatDate(data, CONFIG.FUSO_HORARIO, 'H'));
+  return dia <= 5 && hora >= CONFIG.HORARIO.inicio && hora < CONFIG.HORARIO.fim;
+}
+
+/** Horas dentro do expediente entre duas datas (passos de 10 minutos) */
+function horasUteisEntre(de, ate) {
+  const passo = 10 * 60 * 1000;
+  let minutos = 0;
+  for (let t = de.getTime(); t < ate.getTime(); t += passo) {
+    if (dentroDoExpediente(new Date(t))) minutos += 10;
+  }
+  return minutos / 60;
+}
+
+/* =========================================================================
+   PAINEL (aba "Painel"): só fórmulas, atualiza sozinho
+   ========================================================================= */
+function atualizarPainel() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let aba = ss.getSheetByName(CONFIG.NOME_ABA_PAINEL);
+  if (!aba) aba = ss.insertSheet(CONFIG.NOME_ABA_PAINEL);
+  aba.clear();
+
+  const P = CONFIG.NOME_ABA;
+  const M = CONFIG.NOME_ABA_METRICAS;
+  const col = function (nome) { return P + '!' + letraColuna(colunaPedidos(nome)); };
+  const faixa = function (nome) { return col(nome) + '2:' + letraColuna(colunaPedidos(nome)) + '2000'; };
+
+  const titulo = function (celula, texto) {
+    aba.getRange(celula).setValue(texto).setFontWeight('bold').setFontSize(12);
+  };
+
+  aba.getRange('A1').setValue('Painel de pedidos e do chat').setFontWeight('bold').setFontSize(16);
+
+  // Resumo
+  titulo('A3', 'Resumo');
+  aba.getRange('A4:B8').setFormulas([
+    ['Pedidos no total', '=COUNTA(' + faixa('nome') + ')'],
+    ['Aguardando contato (Novo)', '=COUNTIF(' + faixa('status') + ',"Novo")'],
+    ['Prioridade alta (assembleia marcada)', '=COUNTIF(' + faixa('prioridade') + ',"Alta")'],
+    ['Fechados', '=COUNTIF(' + faixa('status') + ',"Fechado")'],
+    ['Taxa de fechamento', '=IFERROR(B7/B4,0)']
+  ]);
+  aba.getRange('B8').setNumberFormat('0%');
+
+  // Por status
+  titulo('A10', 'Pedidos por status');
+  aba.getRange(11, 1, CONFIG.STATUS.length, 2).setFormulas(CONFIG.STATUS.map(function (s) {
+    return [s, '=COUNTIF(' + faixa('status') + ',A' + (11 + CONFIG.STATUS.indexOf(s)) + ')'];
+  }));
+  aba.getRange(11, 1, CONFIG.STATUS.length, 1).setValues(CONFIG.STATUS.map(function (s) { return [s]; }));
+  const fimStatus = 11 + CONFIG.STATUS.length;
+
+  // Por semana (8 últimas)
+  titulo('D3', 'Pedidos por semana (início na segunda)');
+  const semanas = [];
+  for (let k = 7; k >= 0; k--) {
+    const r = 4 + (7 - k);
+    semanas.push(['=TODAY()-WEEKDAY(TODAY(),3)-' + (7 * k),
+      '=SUMPRODUCT(ISNUMBER(' + faixa('data_hora') + ')*(' + faixa('data_hora') + '>=D' + r + ')*(' + faixa('data_hora') + '<D' + r + '+7))']);
+  }
+  aba.getRange(4, 4, 8, 2).setFormulas(semanas);
+  aba.getRange(4, 4, 8, 1).setNumberFormat('dd/MM');
+
+  // Quebras por campo
+  const consulta = function (celula, tituloTxt, campo, limite) {
+    titulo(celula, tituloTxt);
+    const r = aba.getRange(celula);
+    const linha = r.getRow() + 1;
+    aba.getRange(linha, r.getColumn()).setFormula(
+      '=IFERROR(QUERY(' + P + '!A:' + letraColuna(CONFIG.CABECALHOS.length) + ',"select ' + letraColuna(colunaPedidos(campo)) +
+      ', count(' + letraColuna(colunaPedidos('nome')) + ') where ' + letraColuna(colunaPedidos('nome')) + ' is not null and ' + letraColuna(colunaPedidos(campo)) +
+      ' is not null group by ' + letraColuna(colunaPedidos(campo)) + ' order by count(' + letraColuna(colunaPedidos('nome')) + ') desc ' +
+      (limite ? 'limit ' + limite + ' ' : '') + 'label count(' + letraColuna(colunaPedidos('nome')) + ') \'Pedidos\'",1),"sem dados")');
+  };
+  consulta('A' + (fimStatus + 2), 'Por perfil', 'perfil');
+  consulta('A' + (fimStatus + 10), 'Por portaria atual', 'portaria_hoje');
+  consulta('A' + (fimStatus + 18), 'Locais mais frequentes (top 10)', 'local', 10);
+  consulta('D14', 'Por situação da assembleia', 'assembleia');
+  consulta('D21', 'Fibra óptica (internet)', 'internet_fibra');
+  consulta('D28', 'Cabeamento do interfone', 'cabeamento_interfone');
+
+  // Funil do chat
+  titulo('G3', 'Funil do orçamento no chat (visitas únicas)');
+  aba.getRange('G4:I4').setValues([['Etapa', 'Visitas', '% de quem abriu o chat']]).setFontWeight('bold');
+  const etapas = [['Abriu o chat', '=IFERROR(COUNTA(UNIQUE(FILTER(' + M + '!B2:B,' + M + '!C2:C="chat_aberto"))),0)']];
+  CONFIG.PASSOS_ORCAMENTO.forEach(function (p) {
+    etapas.push(['Chegou em: ' + p, '=IFERROR(COUNTA(UNIQUE(FILTER(' + M + '!B2:B,' + M + '!C2:C="orc_passo",' + M + '!D2:D="' + p + '"))),0)']);
+  });
+  etapas.push(['Pedido registrado', '=IFERROR(COUNTA(UNIQUE(FILTER(' + M + '!B2:B,' + M + '!C2:C="orc_resultado",' + M + '!D2:D="confirmado"))),0)']);
+  etapas.push(['Pedido sem confirmação (falhou)', '=IFERROR(COUNTA(UNIQUE(FILTER(' + M + '!B2:B,' + M + '!C2:C="orc_resultado",' + M + '!D2:D="falhou"))),0)']);
+  etapas.push(['Clicou em enviar pelo WhatsApp', '=IFERROR(COUNTA(UNIQUE(FILTER(' + M + '!B2:B,' + M + '!C2:C="link_clique",REGEXMATCH(' + M + '!D2:D,"WhatsApp")))),0)']);
+  etapas.push(['Copiou o resumo da assembleia', '=IFERROR(COUNTA(UNIQUE(FILTER(' + M + '!B2:B,' + M + '!C2:C="orc_resumo_copiado"))),0)']);
+  aba.getRange(5, 7, etapas.length, 2).setFormulas(etapas);
+  aba.getRange(5, 9, etapas.length, 1).setFormulas(etapas.map(function (_, i) { return ['=IFERROR(H' + (5 + i) + '/$H$5,0)']; }));
+  aba.getRange(5, 9, etapas.length, 1).setNumberFormat('0%');
+
+  // Uso do chat
+  const baseUso = 5 + etapas.length + 2;
+  titulo('G' + baseUso, 'O que as pessoas escolhem no menu');
+  aba.getRange(baseUso + 1, 7).setFormula('=IFERROR(QUERY(' + M + '!B:D,"select Col3, count(Col1) where Col2=\'menu\' group by Col3 order by count(Col1) desc label count(Col1) \'Vezes\'",0),"sem dados")');
+  titulo('G' + (baseUso + 9), 'Dúvidas mais vistas (top 10)');
+  aba.getRange(baseUso + 10, 7).setFormula('=IFERROR(QUERY(' + M + '!B:D,"select Col3, count(Col1) where Col2=\'duvida\' group by Col3 order by count(Col1) desc limit 10 label count(Col1) \'Vezes\'",0),"sem dados")');
+  titulo('G' + (baseUso + 23), 'Ajuda a moradores mais vista (top 10)');
+  aba.getRange(baseUso + 24, 7).setFormula('=IFERROR(QUERY(' + M + '!B:D,"select Col3, count(Col1) where Col2=\'morador\' group by Col3 order by count(Col1) desc limit 10 label count(Col1) \'Vezes\'",0),"sem dados")');
+
+  aba.setColumnWidths(1, 1, 230);
+  aba.setColumnWidths(4, 1, 190);
+  aba.setColumnWidths(7, 1, 280);
+  aba.setColumnWidths(8, 2, 120);
+  aba.setFrozenRows(1);
 }
 
 /**
