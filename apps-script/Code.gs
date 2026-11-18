@@ -316,99 +316,140 @@ function horasUteisEntre(de, ate) {
 /* =========================================================================
    PAINEL (aba "Painel"): só fórmulas, atualiza sozinho
    ========================================================================= */
+
+/** Descobre se a planilha usa vírgula ou ponto e vírgula entre os argumentos das fórmulas (depende do idioma) */
+function detectarSeparador(aba) {
+  const teste = aba.getRange('Z1');
+  teste.setFormula('=IF(TRUE,1,2)');
+  SpreadsheetApp.flush();
+  const funcionou = teste.getValue() === 1;
+  teste.clear();
+  return funcionou ? ',' : ';';
+}
+
+/** Troca as vírgulas fora de aspas pelo separador da planilha */
+function localizarFormula(formula, separador) {
+  if (separador === ',') return formula;
+  let saida = '';
+  let aspas = false;
+  for (let i = 0; i < formula.length; i++) {
+    const c = formula[i];
+    if (c === '"') aspas = !aspas;
+    saida += (c === ',' && !aspas) ? separador : c;
+  }
+  return saida;
+}
+
+/** Escreve texto como texto e "=..." como fórmula (já no separador certo) */
+function escreverCelula(aba, linha, coluna, valor, separador) {
+  const celula = aba.getRange(linha, coluna);
+  if (typeof valor === 'string' && valor.charAt(0) === '=') {
+    celula.setFormula(localizarFormula(valor, separador));
+  } else {
+    celula.setValue(valor);
+  }
+}
+
 function atualizarPainel() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   let aba = ss.getSheetByName(CONFIG.NOME_ABA_PAINEL);
   if (!aba) aba = ss.insertSheet(CONFIG.NOME_ABA_PAINEL);
   aba.clear();
+  const SEP = detectarSeparador(aba);
 
   const P = CONFIG.NOME_ABA;
   const M = CONFIG.NOME_ABA_METRICAS;
-  const col = function (nome) { return P + '!' + letraColuna(colunaPedidos(nome)); };
-  const faixa = function (nome) { return col(nome) + '2:' + letraColuna(colunaPedidos(nome)) + '2000'; };
-
-  const titulo = function (celula, texto) {
-    aba.getRange(celula).setValue(texto).setFontWeight('bold').setFontSize(12);
+  const L = function (nome) { return letraColuna(colunaPedidos(nome)); };
+  const faixa = function (nome) { return P + '!' + L(nome) + '2:' + L(nome) + '2000'; };
+  const unicos = function (filtros) {
+    return '=IFERROR(COUNTA(UNIQUE(FILTER(' + M + '!B2:B,' + filtros + '))),0)';
+  };
+  const poe = function (linha, coluna, valor) { escreverCelula(aba, linha, coluna, valor, SEP); };
+  const titulo = function (linha, coluna, texto) {
+    aba.getRange(linha, coluna).setValue(texto).setFontWeight('bold').setFontSize(12);
   };
 
   aba.getRange('A1').setValue('Painel de pedidos e do chat').setFontWeight('bold').setFontSize(16);
 
   // Resumo
-  titulo('A3', 'Resumo');
-  aba.getRange('A4:B8').setFormulas([
+  titulo(3, 1, 'Resumo');
+  const resumo = [
     ['Pedidos no total', '=COUNTA(' + faixa('nome') + ')'],
     ['Aguardando contato (Novo)', '=COUNTIF(' + faixa('status') + ',"Novo")'],
     ['Prioridade alta (assembleia marcada)', '=COUNTIF(' + faixa('prioridade') + ',"Alta")'],
     ['Fechados', '=COUNTIF(' + faixa('status') + ',"Fechado")'],
     ['Taxa de fechamento', '=IFERROR(B7/B4,0)']
-  ]);
+  ];
+  resumo.forEach(function (r, i) { poe(4 + i, 1, r[0]); poe(4 + i, 2, r[1]); });
   aba.getRange('B8').setNumberFormat('0%');
 
   // Por status
-  titulo('A10', 'Pedidos por status');
-  aba.getRange(11, 1, CONFIG.STATUS.length, 2).setFormulas(CONFIG.STATUS.map(function (s) {
-    return [s, '=COUNTIF(' + faixa('status') + ',A' + (11 + CONFIG.STATUS.indexOf(s)) + ')'];
-  }));
-  aba.getRange(11, 1, CONFIG.STATUS.length, 1).setValues(CONFIG.STATUS.map(function (s) { return [s]; }));
+  titulo(10, 1, 'Pedidos por status');
+  CONFIG.STATUS.forEach(function (nome, i) {
+    poe(11 + i, 1, nome);
+    poe(11 + i, 2, '=COUNTIF(' + faixa('status') + ',A' + (11 + i) + ')');
+  });
   const fimStatus = 11 + CONFIG.STATUS.length;
 
-  // Por semana (8 últimas)
-  titulo('D3', 'Pedidos por semana (início na segunda)');
-  const semanas = [];
+  // Por semana (8 últimas, início na segunda)
+  titulo(3, 4, 'Pedidos por semana (início na segunda)');
   for (let k = 7; k >= 0; k--) {
     const r = 4 + (7 - k);
-    semanas.push(['=TODAY()-WEEKDAY(TODAY(),3)-' + (7 * k),
-      '=SUMPRODUCT(ISNUMBER(' + faixa('data_hora') + ')*(' + faixa('data_hora') + '>=D' + r + ')*(' + faixa('data_hora') + '<D' + r + '+7))']);
+    poe(r, 4, '=TODAY()-WEEKDAY(TODAY(),3)-' + (7 * k));
+    poe(r, 5, '=SUMPRODUCT(ISNUMBER(' + faixa('data_hora') + ')*(' + faixa('data_hora') + '>=D' + r + ')*(' + faixa('data_hora') + '<D' + r + '+7))');
   }
-  aba.getRange(4, 4, 8, 2).setFormulas(semanas);
   aba.getRange(4, 4, 8, 1).setNumberFormat('dd/MM');
 
   // Quebras por campo
-  const consulta = function (celula, tituloTxt, campo, limite) {
-    titulo(celula, tituloTxt);
-    const r = aba.getRange(celula);
-    const linha = r.getRow() + 1;
-    aba.getRange(linha, r.getColumn()).setFormula(
-      '=IFERROR(QUERY(' + P + '!A:' + letraColuna(CONFIG.CABECALHOS.length) + ',"select ' + letraColuna(colunaPedidos(campo)) +
-      ', count(' + letraColuna(colunaPedidos('nome')) + ') where ' + letraColuna(colunaPedidos('nome')) + ' is not null and ' + letraColuna(colunaPedidos(campo)) +
-      ' is not null group by ' + letraColuna(colunaPedidos(campo)) + ' order by count(' + letraColuna(colunaPedidos('nome')) + ') desc ' +
-      (limite ? 'limit ' + limite + ' ' : '') + 'label count(' + letraColuna(colunaPedidos('nome')) + ') \'Pedidos\'",1),"sem dados")');
+  const consulta = function (linha, coluna, tituloTxt, campo, limite) {
+    titulo(linha, coluna, tituloTxt);
+    const nome = L('nome');
+    poe(linha + 1, coluna,
+      '=IFERROR(QUERY(' + P + '!A:' + letraColuna(CONFIG.CABECALHOS.length) + ',"select ' + L(campo) + ', count(' + nome + ') where ' + nome +
+      ' is not null and ' + L(campo) + ' is not null group by ' + L(campo) + ' order by count(' + nome + ') desc ' +
+      (limite ? 'limit ' + limite + ' ' : '') + 'label count(' + nome + ') \'Pedidos\'",1),"sem dados")');
   };
-  consulta('A' + (fimStatus + 2), 'Por perfil', 'perfil');
-  consulta('A' + (fimStatus + 10), 'Por portaria atual', 'portaria_hoje');
-  consulta('A' + (fimStatus + 18), 'Locais mais frequentes (top 10)', 'local', 10);
-  consulta('D14', 'Por situação da assembleia', 'assembleia');
-  consulta('D21', 'Fibra óptica (internet)', 'internet_fibra');
-  consulta('D28', 'Cabeamento do interfone', 'cabeamento_interfone');
+  consulta(fimStatus + 2, 1, 'Por perfil', 'perfil');
+  consulta(fimStatus + 10, 1, 'Por portaria atual', 'portaria_hoje');
+  consulta(fimStatus + 18, 1, 'Locais mais frequentes (top 10)', 'local', 10);
+  consulta(14, 4, 'Por situação da assembleia', 'assembleia');
+  consulta(21, 4, 'Fibra óptica (internet)', 'internet_fibra');
+  consulta(28, 4, 'Cabeamento do interfone', 'cabeamento_interfone');
 
   // Funil do chat
-  titulo('G3', 'Funil do orçamento no chat (visitas únicas)');
+  titulo(3, 7, 'Funil do orçamento no chat (visitas únicas)');
   aba.getRange('G4:I4').setValues([['Etapa', 'Visitas', '% de quem abriu o chat']]).setFontWeight('bold');
-  const etapas = [['Abriu o chat', '=IFERROR(COUNTA(UNIQUE(FILTER(' + M + '!B2:B,' + M + '!C2:C="chat_aberto"))),0)']];
+  const etapas = [['Abriu o chat', unicos(M + '!C2:C="chat_aberto"')]];
   CONFIG.PASSOS_ORCAMENTO.forEach(function (p) {
-    etapas.push(['Chegou em: ' + p, '=IFERROR(COUNTA(UNIQUE(FILTER(' + M + '!B2:B,' + M + '!C2:C="orc_passo",' + M + '!D2:D="' + p + '"))),0)']);
+    etapas.push(['Chegou em: ' + p, unicos(M + '!C2:C="orc_passo",' + M + '!D2:D="' + p + '"')]);
   });
-  etapas.push(['Pedido registrado', '=IFERROR(COUNTA(UNIQUE(FILTER(' + M + '!B2:B,' + M + '!C2:C="orc_resultado",' + M + '!D2:D="confirmado"))),0)']);
-  etapas.push(['Pedido sem confirmação (falhou)', '=IFERROR(COUNTA(UNIQUE(FILTER(' + M + '!B2:B,' + M + '!C2:C="orc_resultado",' + M + '!D2:D="falhou"))),0)']);
-  etapas.push(['Clicou em enviar pelo WhatsApp', '=IFERROR(COUNTA(UNIQUE(FILTER(' + M + '!B2:B,' + M + '!C2:C="link_clique",REGEXMATCH(' + M + '!D2:D,"WhatsApp")))),0)']);
-  etapas.push(['Copiou o resumo da assembleia', '=IFERROR(COUNTA(UNIQUE(FILTER(' + M + '!B2:B,' + M + '!C2:C="orc_resumo_copiado"))),0)']);
-  aba.getRange(5, 7, etapas.length, 2).setFormulas(etapas);
-  aba.getRange(5, 9, etapas.length, 1).setFormulas(etapas.map(function (_, i) { return ['=IFERROR(H' + (5 + i) + '/$H$5,0)']; }));
+  etapas.push(['Pedido registrado', unicos(M + '!C2:C="orc_resultado",' + M + '!D2:D="confirmado"')]);
+  etapas.push(['Pedido sem confirmação (falhou)', unicos(M + '!C2:C="orc_resultado",' + M + '!D2:D="falhou"')]);
+  etapas.push(['Clicou em enviar pelo WhatsApp', unicos(M + '!C2:C="link_clique",REGEXMATCH(' + M + '!D2:D,"WhatsApp")')]);
+  etapas.push(['Copiou o resumo da assembleia', unicos(M + '!C2:C="orc_resumo_copiado"')]);
+  etapas.forEach(function (e, i) {
+    poe(5 + i, 7, e[0]);
+    poe(5 + i, 8, e[1]);
+    poe(5 + i, 9, '=IFERROR(H' + (5 + i) + '/$H$5,0)');
+  });
   aba.getRange(5, 9, etapas.length, 1).setNumberFormat('0%');
 
   // Uso do chat
+  const topo = function (linha, tituloTxt, evento, limite) {
+    titulo(linha, 7, tituloTxt);
+    poe(linha + 1, 7, '=IFERROR(QUERY(' + M + '!B:D,"select Col3, count(Col1) where Col2=\'' + evento + '\' group by Col3 order by count(Col1) desc ' +
+      (limite ? 'limit ' + limite + ' ' : '') + 'label count(Col1) \'Vezes\'",0),"sem dados")');
+  };
   const baseUso = 5 + etapas.length + 2;
-  titulo('G' + baseUso, 'O que as pessoas escolhem no menu');
-  aba.getRange(baseUso + 1, 7).setFormula('=IFERROR(QUERY(' + M + '!B:D,"select Col3, count(Col1) where Col2=\'menu\' group by Col3 order by count(Col1) desc label count(Col1) \'Vezes\'",0),"sem dados")');
-  titulo('G' + (baseUso + 9), 'Dúvidas mais vistas (top 10)');
-  aba.getRange(baseUso + 10, 7).setFormula('=IFERROR(QUERY(' + M + '!B:D,"select Col3, count(Col1) where Col2=\'duvida\' group by Col3 order by count(Col1) desc limit 10 label count(Col1) \'Vezes\'",0),"sem dados")');
-  titulo('G' + (baseUso + 23), 'Ajuda a moradores mais vista (top 10)');
-  aba.getRange(baseUso + 24, 7).setFormula('=IFERROR(QUERY(' + M + '!B:D,"select Col3, count(Col1) where Col2=\'morador\' group by Col3 order by count(Col1) desc limit 10 label count(Col1) \'Vezes\'",0),"sem dados")');
+  topo(baseUso, 'O que as pessoas escolhem no menu', 'menu');
+  topo(baseUso + 9, 'Dúvidas mais vistas (top 10)', 'duvida', 10);
+  topo(baseUso + 23, 'Ajuda a moradores mais vista (top 10)', 'morador', 10);
 
-  aba.setColumnWidths(1, 1, 230);
-  aba.setColumnWidths(4, 1, 190);
-  aba.setColumnWidths(7, 1, 280);
-  aba.setColumnWidths(8, 2, 120);
+  aba.setColumnWidth(1, 230);
+  aba.setColumnWidth(4, 190);
+  aba.setColumnWidth(7, 280);
+  aba.setColumnWidth(8, 120);
+  aba.setColumnWidth(9, 150);
   aba.setFrozenRows(1);
 }
 
