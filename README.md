@@ -35,6 +35,17 @@ python3 -m http.server 8000
 2. O cliente toca em "Enviar ao Comercial pelo WhatsApp" e a conversa abre com tudo já escrito.
 3. Se `appsScriptUrl` estiver preenchido, o pedido também cai na planilha (o chat lê a resposta e avisa se o registro falhar) (com prioridade alta quando há assembleia marcada) e o Comercial recebe um e-mail.
 
+### Planilha: status, lembrete, painel e métricas
+Depois de colar o `apps-script/Code.gs` e publicar uma nova versão, rode `configurarTudo` uma vez no editor do Apps Script. Ela:
+- cria a lista suspensa da coluna `status` (Novo, Contatado, Proposta enviada, Fechado, Perdido);
+- monta a aba `Painel` (pedidos por semana, status, perfil, portaria, locais, funil do chat e dúvidas mais vistas);
+- liga um lembrete a cada 30 minutos, no expediente: pedido em "Novo" além de 2 h úteis (prioridade alta), 4 h (média) ou 8 h (normal) gera um e-mail. Basta mudar o status para parar.
+
+A aba `Métricas` recebe, de forma anônima, as etapas do chat e os cliques em botões (`metricas: true` em `chat-config.js`). Nunca recebe nome, telefone nem texto digitado. Para desligar, use `metricas: false`.
+
+### Verificação automática
+`.github/workflows/verificar.yml` roda a cada push: confere a sintaxe dos scripts, confere se `ia-proxy/conhecimento.js` está em dia com o `chat-config.js` (se não estiver, rode `node ia-proxy/gerar-conhecimento.js`) e valida o HTML.
+
 ### Vídeos tutoriais
 Cada item de `morador` em `chat-config.js` tem o campo `video`. Se for um link `https://` (ex.: YouTube não listado), o bot mostra o botão "Assistir ao vídeo tutorial". Não coloque arquivos de vídeo no repositório.
 

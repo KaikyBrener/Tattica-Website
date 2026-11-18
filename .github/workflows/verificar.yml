@@ -1,0 +1,32 @@
+name: Verificar
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Sintaxe dos scripts
+        run: |
+          for f in script.js chatbot.js chat-config.js ia-proxy/gerar-conhecimento.js ia-proxy/worker.js; do
+            node --check "$f"
+          done
+
+      - name: Conhecimento da IA está em dia com o chat-config.js
+        run: |
+          node ia-proxy/gerar-conhecimento.js
+          git diff --exit-code ia-proxy/conhecimento.js || {
+            echo "::error::ia-proxy/conhecimento.js está desatualizado. Rode: node ia-proxy/gerar-conhecimento.js e faça o commit."
+            exit 1
+          }
+
+      - name: Valida o HTML
+        run: npx --yes html-validate --config .html-validate.json index.html privacidade.html
