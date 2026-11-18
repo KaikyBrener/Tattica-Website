@@ -365,11 +365,28 @@ function atualizarPainel() {
     return '=IFERROR(COUNTA(UNIQUE(FILTER(' + M + '!B2:B,' + filtros + '))),0)';
   };
   const poe = function (linha, coluna, valor) { escreverCelula(aba, linha, coluna, valor, SEP); };
-  const titulo = function (linha, coluna, texto) {
-    aba.getRange(linha, coluna).setValue(texto).setFontWeight('bold').setFontSize(12);
+  // Visual (cores da marca Tattica)
+  const COR = { marinho: '#0f2140', azulInst: '#203b69', azul: '#0a6be0', claro: '#e4eefb', linha: '#dbe5f2', tinta: '#14233f' };
+  aba.setHiddenGridlines(true);
+  aba.getRange(1, 1, 70, 10).setFontFamily('Arial').setFontColor(COR.tinta).setVerticalAlignment('middle');
+  aba.getCharts().forEach(function (g) { aba.removeChart(g); });
+
+  const titulo = function (linha, coluna, texto, largura) {
+    aba.getRange(linha, coluna, 1, largura || 2).setBackground(COR.azulInst).setFontColor('#ffffff').setFontWeight('bold').setFontSize(11);
+    aba.getRange(linha, coluna).setValue(texto);
+  };
+  const cabecalho = function (linha, coluna, largura) {
+    aba.getRange(linha, coluna, 1, largura || 2).setBackground(COR.claro).setFontWeight('bold').setFontColor(COR.azulInst);
+  };
+  const linhas = function (linha, coluna, altura, largura) {
+    aba.getRange(linha, coluna, altura, largura || 2)
+      .setBorder(false, false, true, false, false, true, COR.linha, SpreadsheetApp.BorderStyle.SOLID);
+    aba.getRange(linha, coluna + 1, altura, 1).setHorizontalAlignment('right');
   };
 
-  aba.getRange('A1').setValue('Painel de pedidos e do chat').setFontWeight('bold').setFontSize(16);
+  aba.getRange('A1:I1').setBackground(COR.marinho).setFontColor('#ffffff').setFontWeight('bold').setFontSize(16);
+  aba.getRange('A1').setValue('Painel de pedidos e do chat');
+  aba.setRowHeight(1, 40);
 
   // Resumo
   titulo(3, 1, 'Resumo');
@@ -382,6 +399,8 @@ function atualizarPainel() {
   ];
   resumo.forEach(function (r, i) { poe(4 + i, 1, r[0]); poe(4 + i, 2, r[1]); });
   aba.getRange('B8').setNumberFormat('0%');
+  linhas(4, 1, 5);
+  aba.getRange('B4:B8').setFontSize(14).setFontWeight('bold').setFontColor(COR.azul);
 
   // Por status
   titulo(10, 1, 'Pedidos por status');
@@ -390,6 +409,8 @@ function atualizarPainel() {
     poe(11 + i, 2, '=COUNTIF(' + faixa('status') + ',A' + (11 + i) + ')');
   });
   const fimStatus = 11 + CONFIG.STATUS.length;
+  linhas(11, 1, CONFIG.STATUS.length);
+  aba.getRange(11, 2, CONFIG.STATUS.length, 1).setFontWeight('bold');
 
   // Por semana (8 últimas, início na segunda)
   titulo(3, 4, 'Pedidos por semana (início na segunda)');
@@ -398,27 +419,31 @@ function atualizarPainel() {
     poe(r, 4, '=TODAY()-WEEKDAY(TODAY(),3)-' + (7 * k));
     poe(r, 5, '=SUMPRODUCT(ISNUMBER(' + faixa('data_hora') + ')*(' + faixa('data_hora') + '>=D' + r + ')*(' + faixa('data_hora') + '<D' + r + '+7))');
   }
-  aba.getRange(4, 4, 8, 1).setNumberFormat('dd/MM');
+  aba.getRange(4, 4, 8, 1).setNumberFormat('dd/MM').setHorizontalAlignment('left');
+  linhas(4, 4, 8);
 
   // Quebras por campo
-  const consulta = function (linha, coluna, tituloTxt, campo, limite) {
+  const consulta = function (linha, coluna, tituloTxt, campo, limite, maxLinhas) {
     titulo(linha, coluna, tituloTxt);
+    cabecalho(linha + 1, coluna);
+    linhas(linha + 2, coluna, maxLinhas);
     const nome = L('nome');
     poe(linha + 1, coluna,
       '=IFERROR(QUERY(' + P + '!A:' + letraColuna(CONFIG.CABECALHOS.length) + ',"select ' + L(campo) + ', count(' + nome + ') where ' + nome +
       ' is not null and ' + L(campo) + ' is not null group by ' + L(campo) + ' order by count(' + nome + ') desc ' +
       (limite ? 'limit ' + limite + ' ' : '') + 'label count(' + nome + ') \'Pedidos\'",1),"sem dados")');
   };
-  consulta(fimStatus + 2, 1, 'Por perfil', 'perfil');
-  consulta(fimStatus + 10, 1, 'Por portaria atual', 'portaria_hoje');
-  consulta(fimStatus + 18, 1, 'Locais mais frequentes (top 10)', 'local', 10);
-  consulta(14, 4, 'Por situação da assembleia', 'assembleia');
-  consulta(21, 4, 'Fibra óptica (internet)', 'internet_fibra');
-  consulta(28, 4, 'Cabeamento do interfone', 'cabeamento_interfone');
+  consulta(fimStatus + 2, 1, 'Por perfil', 'perfil', 0, 4);
+  consulta(fimStatus + 10, 1, 'Por portaria atual', 'portaria_hoje', 0, 4);
+  consulta(fimStatus + 18, 1, 'Locais mais frequentes (top 10)', 'local', 10, 10);
+  consulta(14, 4, 'Por situação da assembleia', 'assembleia', 0, 3);
+  consulta(21, 4, 'Fibra óptica (internet)', 'internet_fibra', 0, 3);
+  consulta(28, 4, 'Cabeamento do interfone', 'cabeamento_interfone', 0, 3);
 
   // Funil do chat
-  titulo(3, 7, 'Funil do orçamento no chat (visitas únicas)');
-  aba.getRange('G4:I4').setValues([['Etapa', 'Visitas', '% de quem abriu o chat']]).setFontWeight('bold');
+  titulo(3, 7, 'Funil do orçamento no chat (visitas únicas)', 3);
+  aba.getRange('G4:I4').setValues([['Etapa', 'Visitas', '% de quem abriu o chat']]);
+  cabecalho(4, 7, 3);
   const etapas = [['Abriu o chat', unicos(M + '!C2:C="chat_aberto"')]];
   CONFIG.PASSOS_ORCAMENTO.forEach(function (p) {
     etapas.push(['Chegou em: ' + p, unicos(M + '!C2:C="orc_passo",' + M + '!D2:D="' + p + '"')]);
@@ -433,24 +458,56 @@ function atualizarPainel() {
     poe(5 + i, 9, '=IFERROR(H' + (5 + i) + '/$H$5,0)');
   });
   aba.getRange(5, 9, etapas.length, 1).setNumberFormat('0%');
+  linhas(5, 7, etapas.length, 3);
+  aba.getRange(5, 9, etapas.length, 1).setHorizontalAlignment('right');
 
   // Uso do chat
-  const topo = function (linha, tituloTxt, evento, limite) {
+  const topo = function (linha, tituloTxt, evento, limite, maxLinhas) {
     titulo(linha, 7, tituloTxt);
+    cabecalho(linha + 1, 7);
+    linhas(linha + 2, 7, maxLinhas);
     poe(linha + 1, 7, '=IFERROR(QUERY(' + M + '!B:D,"select Col3, count(Col1) where Col2=\'' + evento + '\' group by Col3 order by count(Col1) desc ' +
       (limite ? 'limit ' + limite + ' ' : '') + 'label count(Col1) \'Vezes\'",0),"sem dados")');
   };
   const baseUso = 5 + etapas.length + 2;
-  topo(baseUso, 'O que as pessoas escolhem no menu', 'menu');
-  topo(baseUso + 9, 'Dúvidas mais vistas (top 10)', 'duvida', 10);
-  topo(baseUso + 23, 'Ajuda a moradores mais vista (top 10)', 'morador', 10);
+  topo(baseUso, 'O que as pessoas escolhem no menu', 'menu', 0, 5);
+  topo(baseUso + 9, 'Dúvidas mais vistas (top 10)', 'duvida', 10, 10);
+  topo(baseUso + 23, 'Ajuda a moradores mais vista (top 10)', 'morador', 10, 10);
 
-  aba.setColumnWidth(1, 230);
-  aba.setColumnWidth(4, 190);
-  aba.setColumnWidth(7, 280);
-  aba.setColumnWidth(8, 120);
-  aba.setColumnWidth(9, 150);
+  [[1, 260], [2, 90], [3, 24], [4, 170], [5, 90], [6, 24], [7, 300], [8, 90], [9, 170], [10, 24]].forEach(function (c) {
+    aba.setColumnWidth(c[0], c[1]);
+  });
   aba.setFrozenRows(1);
+
+  // Gráficos (uma só cor, sem legenda: o título já diz o que é)
+  try {
+    const estilo = function (g, titulo2, largura, altura) {
+      return g.setOption('title', titulo2)
+        .setOption('titleTextStyle', { color: COR.tinta, fontSize: 13, bold: true })
+        .setOption('colors', [COR.azul])
+        .setOption('legend', { position: 'none' })
+        .setOption('backgroundColor', '#ffffff')
+        .setOption('width', largura)
+        .setOption('height', altura)
+        .setOption('hAxis', { textStyle: { color: '#5b6b85' }, gridlines: { color: COR.linha } })
+        .setOption('vAxis', { textStyle: { color: '#5b6b85' }, gridlines: { color: COR.linha } });
+    };
+    aba.insertChart(estilo(aba.newChart()
+      .setChartType(Charts.ChartType.COLUMN)
+      .addRange(aba.getRange(4, 4, 8, 2))
+      .setNumHeaders(0)
+      .setPosition(3, 11, 0, 0)
+      .setOption('bar', { groupWidth: '55%' }), 'Pedidos por semana', 520, 260).build());
+    aba.insertChart(estilo(aba.newChart()
+      .setChartType(Charts.ChartType.BAR)
+      .addRange(aba.getRange(4, 7, etapas.length + 1, 2))
+      .setNumHeaders(1)
+      .setPosition(18, 11, 0, 0)
+      .setOption('reverseCategories', true)
+      .setOption('bar', { groupWidth: '60%' }), 'Funil do orçamento no chat', 520, 440).build());
+  } catch (erro) {
+    Logger.log('Gráficos não criados: ' + erro.message);
+  }
 }
 
 /**
