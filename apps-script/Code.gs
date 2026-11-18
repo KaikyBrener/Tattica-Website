@@ -125,6 +125,7 @@ function doPost(e) {
 
     sheet.appendRow(novaLinha);
     sheet.getRange(sheet.getLastRow(), 1).setNumberFormat('dd/MM/yyyy HH:mm:ss');
+    linkAmigavel(sheet, sheet.getLastRow(), linkWhatsApp);
 
     // O pedido já está salvo; uma falha no e-mail não deve derrubar a resposta
     try {
@@ -195,20 +196,7 @@ function configurarTudo() {
   const pedidos = obterOuCriarAba(ss);
   obterOuCriarAbaMetricas(ss);
 
-  // Lista suspensa de status (coluna "status") e cores por situação
-  const colStatus = colunaPedidos('status');
-  const regra = SpreadsheetApp.newDataValidation()
-    .requireValueInList(CONFIG.STATUS, true)
-    .setAllowInvalid(false)
-    .build();
-  pedidos.getRange(2, colStatus, 2000, 1).setDataValidation(regra);
-  const faixa = pedidos.getRange(2, colStatus, 2000, 1);
-  const cores = { 'Novo': '#fef0c7', 'Contatado': '#dbeafe', 'Proposta enviada': '#e0e7ff', 'Fechado': '#d1fadf', 'Perdido': '#f2f4f7' };
-  pedidos.setConditionalFormatRules(Object.keys(cores).map(function (nome) {
-    return SpreadsheetApp.newConditionalFormatRule()
-      .whenTextEqualTo(nome).setBackground(cores[nome]).setRanges([faixa]).build();
-  }));
-
+  formatarPedidos();
   atualizarPainel();
   instalarGatilhos();
   Logger.log('Pronto: status, painel e lembrete configurados.');
@@ -219,6 +207,96 @@ function instalarGatilhos() {
     if (t.getHandlerFunction() === 'verificarPedidosParados') ScriptApp.deleteTrigger(t);
   });
   ScriptApp.newTrigger('verificarPedidosParados').timeBased().everyMinutes(30).create();
+}
+
+/* =========================================================================
+   VISUAL DA ABA "PEDIDOS"
+   Cabeçalho da marca, larguras, linhas alternadas, cores de prioridade e
+   status, lista suspensa de status e link do WhatsApp curto ("Chamar no
+   WhatsApp" no lugar do endereço enorme). Pode rodar de novo quando quiser.
+   ========================================================================= */
+function formatarPedidos() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const aba = obterOuCriarAba(ss);
+  const n = CONFIG.CABECALHOS.length;
+  const linhasTotal = Math.max(aba.getMaxRows(), 2);
+  const COR = { marinho: '#0f2140', zebra: '#f1f5fa', tinta: '#14233f' };
+
+  // Largura de cada coluna, na ordem de CONFIG.CABECALHOS
+  const larguras = { data_hora: 140, prioridade: 90, perfil: 120, nome: 180, telefone: 130, local: 210, blocos: 80, unidades: 80,
+    portaria_hoje: 220, camera_ou_acesso: 130, assembleia: 140, origem: 80, consentimento: 110, link_whatsapp: 160,
+    internet_fibra: 150, cabeamento_interfone: 160, pontos_a_avaliar: 340, status: 150, lembrete_enviado: 150 };
+  CONFIG.CABECALHOS.forEach(function (nome, i) { aba.setColumnWidth(i + 1, larguras[nome] || 120); });
+
+  // Corpo: fonte, alinhamento e linhas alternadas
+  aba.getRange(1, 1, linhasTotal, n).setFontFamily('Arial').setFontSize(10).setFontColor(COR.tinta).setVerticalAlignment('middle');
+  aba.getBandings().forEach(function (b) { b.remove(); });
+  aba.getRange(1, 1, linhasTotal, n).applyRowBanding(SpreadsheetApp.BandingTheme.LIGHT_GREY)
+    .setHeaderRowColor(COR.marinho).setFirstRowColor('#ffffff').setSecondRowColor(COR.zebra);
+
+  // Cabeçalho
+  aba.getRange(1, 1, 1, n).setBackground(COR.marinho).setFontColor('#ffffff').setFontWeight('bold')
+    .setHorizontalAlignment('left').setWrap(true).setVerticalAlignment('middle');
+  aba.setRowHeight(1, 38);
+  aba.setFrozenRows(1);
+  aba.setFrozenColumns(4);
+
+  // Filtro em todas as colunas
+  const filtro = aba.getFilter();
+  if (filtro) filtro.remove();
+  aba.getRange(1, 1, Math.max(aba.getLastRow(), 2), n).createFilter();
+
+  // Lista suspensa de status
+  const colStatus = colunaPedidos('status');
+  aba.getRange(2, colStatus, linhasTotal - 1, 1).setDataValidation(
+    SpreadsheetApp.newDataValidation().requireValueInList(CONFIG.STATUS, true).setAllowInvalid(false).build());
+
+  // Cores por prioridade e por status
+  const regras = [];
+  const pinta = function (nome, texto, fundo, fonte, cor) {
+    const faixa = aba.getRange(2, colunaPedidos(nome), linhasTotal - 1, 1);
+    regras.push(SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo(texto)
+      .setBackground(fundo).setFontColor(fonte).setBold(true).setRanges([faixa]).build());
+  };
+  pinta('prioridade', 'Alta', '#fee4e2', '#b42318');
+  pinta('prioridade', 'Média', '#fef0c7', '#93370d');
+  pinta('prioridade', 'Normal', '#f2f4f7', '#344054');
+  pinta('status', 'Novo', '#fef0c7', '#93370d');
+  pinta('status', 'Contatado', '#dbeafe', '#1849a9');
+  pinta('status', 'Proposta enviada', '#e0e7ff', '#3538cd');
+  pinta('status', 'Fechado', '#d1fadf', '#05603a');
+  pinta('status', 'Perdido', '#f2f4f7', '#475467');
+  aba.setConditionalFormatRules(regras);
+
+  // Alturas e alinhamentos
+  if (aba.getLastRow() > 1) {
+    aba.setRowHeights(2, aba.getLastRow() - 1, 28);
+  }
+  ['prioridade', 'blocos', 'unidades', 'status'].forEach(function (nome) {
+    aba.getRange(2, colunaPedidos(nome), linhasTotal - 1, 1).setHorizontalAlignment('center');
+  });
+
+  // Links longos do WhatsApp viram "Chamar no WhatsApp"
+  const colLink = colunaPedidos('link_whatsapp');
+  if (aba.getLastRow() > 1) {
+    const faixaLink = aba.getRange(2, colLink, aba.getLastRow() - 1, 1);
+    const valores = faixaLink.getValues();
+    valores.forEach(function (v, i) {
+      const url = String(v[0] || '');
+      if (/^https:\/\/wa\.me\//.test(url)) linkAmigavel(aba, i + 2, url);
+    });
+  }
+  aba.getRange(2, colLink, linhasTotal - 1, 1).setHorizontalAlignment('center');
+}
+
+/** Escreve "Chamar no WhatsApp" com o link por trás (nunca o endereço comprido) */
+function linkAmigavel(aba, linha, url) {
+  try {
+    const rico = SpreadsheetApp.newRichTextValue().setText('Chamar no WhatsApp').setLinkUrl(url).build();
+    aba.getRange(linha, colunaPedidos('link_whatsapp')).setRichTextValue(rico);
+  } catch (erro) {
+    Logger.log('Link não encurtado: ' + erro.message);
+  }
 }
 
 /** Número da coluna (1, 2, 3...) de um cabeçalho da aba Pedidos */
@@ -257,7 +335,6 @@ function verificarPedidosParados() {
   const iNome = colunaPedidos('nome') - 1;
   const iTel = colunaPedidos('telefone') - 1;
   const iLocal = colunaPedidos('local') - 1;
-  const iLink = colunaPedidos('link_whatsapp') - 1;
 
   const parados = [];
   valores.forEach(function (linha, i) {
@@ -269,7 +346,7 @@ function verificarPedidosParados() {
     const limite = CONFIG.LEMBRETE_HORAS[prioridade] || CONFIG.LEMBRETE_HORAS['Normal'];
     const horas = horasUteisEntre(criado, agora);
     if (horas >= limite) {
-      parados.push({ linha: i + 2, prioridade: prioridade, nome: linha[iNome], telefone: linha[iTel], local: linha[iLocal], link: linha[iLink], horas: horas });
+      parados.push({ linha: i + 2, prioridade: prioridade, nome: linha[iNome], telefone: linha[iTel], local: linha[iLocal], link: montarLinkWhatsApp(textoPuro(linha[iNome]), apenasDigitos(linha[iTel])), horas: horas });
     }
   });
   if (!parados.length) return;
