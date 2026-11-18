@@ -23,6 +23,9 @@ window.TATTICA_CHAT = {
     /* Endereço do script do Google (veja apps-script/Code.gs). Vazio = não registra em planilha. */
     appsScriptUrl: 'https://script.google.com/macros/s/AKfycbz3oAEV35nzzJgJEHMP19m-PqERq-wDluynQUKBopgFOjKNHZBfUqxo8hlEaAId5dHJKg/exec',
 
+    /* Métricas anônimas do chat (etapas e cliques, sem nome, telefone nem texto digitado). true = ligado. */
+    metricas: true,
+
     /* Horário do Comercial. dias: 0 = domingo ... 6 = sábado. Horas em formato 24h. */
     horarioComercial: { dias: [1, 2, 3, 4, 5], inicio: 8, fim: 18 },
 

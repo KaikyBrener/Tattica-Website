@@ -54,6 +54,36 @@
     const setStatus = (t) => { statusText.textContent = t; root.classList.toggle('is-typing', t !== 'Online'); };
 
     /* ---------- Controle da conversa ---------- */
+    /* ---------- Métricas anônimas ----------
+       Só guarda a etapa do chat e cliques em botões. Nunca envia nome, telefone nem texto digitado.
+       O código da sessão é aleatório e vale só enquanto a página está aberta (sem cookie nem armazenamento).
+       Os eventos saem em lotes para o mesmo Apps Script dos pedidos. */
+    const sessao = Array.from(crypto.getRandomValues(new Uint8Array(4)), (b) => b.toString(16).padStart(2, '0')).join('');
+    let fila = [];
+    let filaTimer;
+    function enviarFila() {
+        clearTimeout(filaTimer);
+        if (!fila.length || !CFG.appsScriptUrl) { fila = []; return; }
+        const corpo = JSON.stringify({ tipo: 'eventos', sessao, eventos: fila });
+        fila = [];
+        try {
+            const blob = new Blob([corpo], { type: 'text/plain;charset=utf-8' });
+            if (!(navigator.sendBeacon && navigator.sendBeacon(CFG.appsScriptUrl, blob))) {
+                fetch(CFG.appsScriptUrl, { method: 'POST', body: corpo, headers: { 'Content-Type': 'text/plain;charset=utf-8' }, keepalive: true, mode: 'no-cors' }).catch(() => {});
+            }
+        } catch (_) { /* métrica nunca pode atrapalhar o chat */ }
+    }
+    function m(evento, detalhe = '') {
+        if (!CFG.appsScriptUrl || CFG.metricas === false) return;
+        fila.push({ evento, detalhe: String(detalhe).slice(0, 80), quando: new Date().toISOString() });
+        if (fila.length >= 8) return enviarFila();
+        clearTimeout(filaTimer);
+        filaTimer = setTimeout(enviarFila, 15000);
+    }
+    /* Ao sair ou trocar de aba, envia o que faltou (é assim que se vê onde a pessoa parou) */
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') enviarFila(); });
+    window.addEventListener('pagehide', enviarFila);
+
     let token = 0;               // muda ao recomeçar: interrompe fluxos antigos
     let started = false;
     class Cancel extends Error {}
@@ -144,6 +174,7 @@
                     el.className = 'chat__opt chat__opt--link';
                     el.style.setProperty('--i', i);
                     el.textContent = item.label;
+                    el.addEventListener('click', () => m('link_clique', item.label));
                     box.appendChild(el);
                     return;
                 }
@@ -300,6 +331,7 @@
             ...(CFG.iaUrl ? ['Digitar a minha pergunta'] : []),
             'Falar com um atendente'
         ]);
+        m('menu', escolha.label);
         if (escolha.label.startsWith('Quero')) return orcamento(tok);
         if (escolha.label.startsWith('Dúvidas')) return duvidas(tok);
         if (escolha.label.startsWith('Sou morador')) return morador(tok);
@@ -365,7 +397,7 @@
             await say(tok, 'Qual é o assunto?');
             const t = await choose(tok, [...temas, ...CFG.encaminharTitulos, 'Voltar ao início']);
             if (t.label === 'Voltar ao início') return menu(tok, false);
-            if (temas.includes(t.label)) return duvidas(tok, t.label);
+            if (temas.includes(t.label)) { m('duvida_tema', t.label); return duvidas(tok, t.label); }
             return encaminharDuvida(tok);
         }
         const lista = tema ? CFG.faq.filter(f => f.tema === tema) : CFG.faq;
@@ -374,7 +406,8 @@
         if (e.label === 'Voltar ao início') return menu(tok, false);
         if (e.label === 'Ver outros temas') return duvidas(tok);
         const faq = lista.find(f => f.p === e.label);
-        if (!faq) return encaminharDuvida(tok);
+        if (!faq) { m('duvida_sem_resposta', e.label); return encaminharDuvida(tok); }
+        m('duvida', faq.p);
         await say(tok, faq.r);
         const r = await choose(tok, ['Quero um orçamento', 'Outra dúvida', 'Voltar ao início']);
         if (r.label === 'Quero um orçamento') return orcamento(tok);
@@ -393,7 +426,8 @@
         const e = await choose(tok, [...CFG.morador.map(m => m.p), 'Falar com um atendente', 'Voltar ao início']);
         if (e.label === 'Voltar ao início') return menu(tok, false);
         if (e.label === 'Falar com um atendente') return atendente(tok);
-        const item = CFG.morador.find(m => m.p === e.label);
+        const item = CFG.morador.find((x) => x.p === e.label);
+        m('morador', item.p);
         await say(tok, item.r);
         const video = /^https:\/\//.test(item.video || '') ? [{ label: 'Assistir ao vídeo tutorial', href: item.video }] : [];
         const r = await choose(tok, [...video, 'Outro assunto de morador', 'Falar com um atendente', 'Voltar ao início']);
@@ -406,6 +440,7 @@
         await say(tok, 'Com quem você quer falar?');
         const e = await choose(tok, ['Comercial (contratar)', 'Manutenção, Tecnologia ou Administrativo', 'Central 24 horas', 'Voltar ao início']);
         if (e.label === 'Voltar ao início') return menu(tok, false);
+        m('atendente', e.label);
         if (e.label.startsWith('Comercial')) {
             await say(tok, dentroDoHorario()
                 ? 'O Comercial atende de segunda a sexta, das 8h às 18h, e está no horário agora. Toque para abrir o WhatsApp.'
@@ -433,29 +468,42 @@
     async function orcamento(tok) {
         const lead = {};
         await say(tok, 'Ótimo! Vou fazer algumas perguntas rápidas para o Comercial já chegar preparado. Leva cerca de 1 minuto.');
+        m('orc_inicio');
+        m('orc_passo', 'perfil');
         await say(tok, 'Quem é você?');
         lead.perfil = (await choose(tok, ['Síndico', 'Administradora', 'Morador (quero indicar)', 'Outro'])).label;
+        m('orc_passo', 'blocos');
         await say(tok, 'Quantos blocos ou torres o condomínio tem?');
         lead.blocos = (await choose(tok, ['1', '2 a 4', '5 ou mais'])).label;
+        m('orc_passo', 'unidades');
         lead.unidades = await ask(tok, 'Quantas unidades (apartamentos) aproximadamente?', 'number');
+        m('orc_passo', 'portaria');
         await say(tok, 'Como é a portaria hoje?');
         lead.portaria = (await choose(tok, ['Portaria física (porteiros)', 'Portaria terceirizada', 'Portaria virtual', 'Não tem portaria'])).label;
+        m('orc_passo', 'estrutura');
         await say(tok, 'O condomínio já tem câmeras ou controle de acesso?');
         lead.estrutura = (await choose(tok, ['Sim', 'Não', 'Não sei'])).label;
+        m('orc_passo', 'internet');
         await say(tok, 'O condomínio tem, ou pode contratar, internet por fibra óptica de no mínimo 10 Mb? Essa contratação fica por conta do condomínio.');
         lead.internet = (await choose(tok, ['Já tem fibra óptica', 'Pode contratar', 'Não sei'])).label;
+        m('orc_passo', 'interfone');
         await say(tok, 'O interfone atual tem cabeamento? A proposta aproveita o cabeamento que já existe.');
         lead.interfone = (await choose(tok, ['Sim', 'Não', 'Não sei'])).label;
         lead.pontos = pontosAvaliar(lead);
+        m('orc_passo', 'local');
         lead.local = await ask(tok, 'Qual o bairro e a cidade?');
+        m('orc_passo', 'assembleia');
         await say(tok, 'Já existe assembleia marcada para decidir sobre a portaria?');
         lead.assembleia = (await choose(tok, ['Sim, já marcada', 'Vamos marcar', 'Sem previsão'])).label;
+        m('orc_passo', 'nome');
         lead.nome = await ask(tok, 'Qual o seu nome?');
+        m('orc_passo', 'telefone');
         lead.telefone = await ask(tok, 'Qual o seu telefone ou WhatsApp?', 'phone');
 
+        m('orc_passo', 'autorizacao');
         await say(tok, 'Posso enviar estes dados ao Comercial da Tattica? Eles usam só para retornar o seu contato. Não envie documentos por aqui.');
         const ok = await choose(tok, ['Autorizo e quero enviar', { label: 'Ler a política de privacidade', href: 'privacidade.html' }, 'Cancelar']);
-        if (ok.label === 'Cancelar') { await say(tok, 'Tudo bem, nada foi enviado.'); return menu(tok, false); }
+        if (ok.label === 'Cancelar') { m('orc_cancelado'); await say(tok, 'Tudo bem, nada foi enviado.'); return menu(tok, false); }
 
         lead.prioridade = lead.assembleia.startsWith('Sim') ? 'Alta' : lead.assembleia.startsWith('Vamos') ? 'Média' : 'Normal';
         lead.consentimento = 'Sim';
@@ -464,6 +512,7 @@
 
         let situacao = await registrarPedido(lead);
         alive(tok);
+        m('orc_resultado', situacao);
 
         const texto = mensagemComercial(lead);
 
@@ -476,6 +525,7 @@
                 const typing = addTyping();
                 situacao = await registrarPedido(lead);
                 alive(tok);
+                m('orc_resultado', situacao === 'falhou' ? 'falhou_de_novo' : situacao);
                 typing.remove();
                 setStatus('Online');
                 if (situacao !== 'falhou') break;
@@ -500,6 +550,7 @@
             ]);
             if (r.label.startsWith('Voltar')) break;
             resumoFeito = true;
+            m('orc_resumo_copiado');
             const resumo = resumoAssembleia(lead);
             let copiou = false;
             try { await navigator.clipboard.writeText(resumo); copiou = true; } catch (_) { /* sem permissão: mostra o texto */ }
@@ -559,7 +610,7 @@
             hintTimer = setTimeout(hideHint, 9000);
         }, 4000);
     }
-    hint.addEventListener('click', () => { hideHint(); open(); });
+    hint.addEventListener('click', () => { m('balao_clique'); hideHint(); open(); });
 
     function open() {
         hideHint();
@@ -568,6 +619,7 @@
         launcher.setAttribute('aria-expanded', 'true');
         launcher.hidden = true;
         document.body.classList.add('chat-open');
+        m('chat_aberto', dentroDoHorario() ? 'no horário' : 'fora do horário');
         if (!started) { started = true; run(menu); }
         panel.querySelector('button, input, a')?.focus({ preventScroll: true });
     }
@@ -590,6 +642,7 @@
     const restartBtn = root.querySelector('[data-chat-restart]');
     restartBtn.addEventListener('click', () => {
         restartBtn.classList.remove('is-spinning'); void restartBtn.offsetWidth; restartBtn.classList.add('is-spinning');
+        m('reiniciou');
         run(menu);
     });
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !panel.hidden) close(); });
