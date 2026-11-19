@@ -122,83 +122,129 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 6. MODAL DE SOLICITAÇÃO DE ORÇAMENTO
-    const quoteModal = document.getElementById('orcamento-modal');
-    const quoteForm = document.getElementById('quote-form');
-    const quoteTriggers = document.querySelectorAll('.quote-trigger');
-    const quoteCloseButtons = quoteModal ? quoteModal.querySelectorAll('[data-quote-close]') : [];
-    const quotePhone = document.getElementById('quote-phone');
-    let lastQuoteTrigger;
-
-    const formatPhone = (value) => {
-        const digits = value.replace(/\D/g, '').slice(0, 11);
-        if (digits.length <= 2) return digits.length ? `(${digits}` : '';
-        if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
-        return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
-    };
-
-    const closeQuoteModal = () => {
-        if (!quoteModal) return;
-        quoteModal.hidden = true;
-        document.body.classList.remove('quote-modal-open');
-        lastQuoteTrigger?.focus();
-    };
-
-    if (quoteModal && quoteForm) {
-        quoteTriggers.forEach(trigger => {
-            trigger.addEventListener('click', (event) => {
-                event.preventDefault();
-                closeMenu();
-                lastQuoteTrigger = trigger;
-                quoteModal.hidden = false;
-                document.body.classList.add('quote-modal-open');
-                document.getElementById('quote-name').focus();
-            });
-        });
-
-        quoteCloseButtons.forEach(button => button.addEventListener('click', closeQuoteModal));
-        quotePhone?.addEventListener('input', () => {
-            quotePhone.value = formatPhone(quotePhone.value);
-        });
-
-        quoteForm.addEventListener('submit', (event) => {
+    // 6. BOTÕES DE ORÇAMENTO: abrem o assistente direto no fluxo de orçamento (chatbot.js)
+    // Sem o assistente (JavaScript bloqueado ou falha ao carregar), o link segue para o WhatsApp.
+    document.querySelectorAll('.quote-trigger').forEach((botao) => {
+        botao.addEventListener('click', (event) => {
+            if (!window.TatticaChat) return;
             event.preventDefault();
-            if (!quoteForm.reportValidity()) return;
+            closeMenu();
+            const origem = botao.dataset.origem || botao.closest('section[id]')?.id || 'cabecalho';
+            window.TatticaChat.abrirOrcamento(origem);
+        });
+    });
 
-            const formData = new FormData(quoteForm);
-            const message = [
-                'Olá! Desejo solicitar um orçamento.',
-                '',
-                `Nome: ${formData.get('nome')}`,
-                `E-mail: ${formData.get('email')}`,
-                `Telefone: ${formData.get('telefone')}`
-            ].join('\n');
-            const whatsappUrl = `https://wa.me/552730262196?text=${encodeURIComponent(message)}`;
-            window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
-            closeQuoteModal();
-            quoteForm.reset();
+    // 8. ABAS NO CELULAR
+    // No celular (até 767 px) e com JavaScript, a página mostra uma seção-grupo por vez, escolhida
+    // na barra de abas. Cada seção continua com o seu endereço (#torre, #faq...), então links,
+    // menu e botão voltar do navegador funcionam. No computador, ou sem JavaScript, nada muda.
+    const barraAbas = document.getElementById('abas');
+    const consultaCelular = window.matchMedia('(max-width: 767px)');
+    const abaPadrao = 'portaria';
+
+    if (barraAbas) {
+        const linksAbas = barraAbas.querySelectorAll('[data-aba-link]');
+        const abaDaSecao = (el) => el?.closest('[data-aba]')?.dataset.aba || null;
+
+        const ativarAba = (aba) => {
+            document.querySelectorAll('[data-aba]').forEach((sec) => {
+                sec.classList.toggle('is-aba-ativa', sec.dataset.aba === aba);
+            });
+            linksAbas.forEach((link) => {
+                if (link.dataset.abaLink === aba) link.setAttribute('aria-current', 'true');
+                else link.removeAttribute('aria-current');
+            });
+            const ativo = barraAbas.querySelector('[aria-current="true"]');
+            if (ativo && ativo.scrollIntoView) ativo.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'auto' });
+        };
+
+        // Descobre a aba pelo endereço atual (#torre abre a aba Soluções, por exemplo)
+        const abaDoEndereco = () => {
+            const id = decodeURIComponent(location.hash.slice(1));
+            return (id && abaDaSecao(document.getElementById(id))) || null;
+        };
+
+        const ligarAbas = () => {
+            document.documentElement.classList.add('abas-ativas');
+            barraAbas.hidden = false;
+            ativarAba(abaDoEndereco() || abaPadrao);
+        };
+        const desligarAbas = () => {
+            document.documentElement.classList.remove('abas-ativas');
+            barraAbas.hidden = true;
+        };
+        const aplicarModo = () => (consultaCelular.matches ? ligarAbas() : desligarAbas());
+
+        // Qualquer link interno (menu, rodapé, botões) que aponte para uma seção de outra aba troca a aba
+        // antes de o navegador rolar até ela.
+        document.addEventListener('click', (e) => {
+            if (!consultaCelular.matches) return;
+            const link = e.target.closest('a[href^="#"]');
+            if (!link) return;
+            const alvo = document.getElementById(decodeURIComponent(link.getAttribute('href').slice(1)));
+            const aba = abaDaSecao(alvo);
+            if (aba) ativarAba(aba);
         });
 
-        document.addEventListener('keydown', (event) => {
-            if (quoteModal.hidden) return;
-            if (event.key === 'Escape') {
-                closeQuoteModal();
-                return;
-            }
-            if (event.key !== 'Tab') return;
-
-            // Mantém o foco dentro do modal enquanto ele está aberto
-            const focusable = quoteModal.querySelectorAll('button, input, a[href]');
-            const first = focusable[0];
-            const last = focusable[focusable.length - 1];
-            if (event.shiftKey && document.activeElement === first) {
-                event.preventDefault();
-                last.focus();
-            } else if (!event.shiftKey && document.activeElement === last) {
-                event.preventDefault();
-                first.focus();
-            }
+        // Botão voltar/avançar e mudança de endereço
+        window.addEventListener('hashchange', () => {
+            if (!consultaCelular.matches) return;
+            const aba = abaDoEndereco();
+            if (!aba) return;
+            ativarAba(aba);
+            document.getElementById(decodeURIComponent(location.hash.slice(1)))?.scrollIntoView();
         });
+
+        consultaCelular.addEventListener('change', aplicarModo);
+        aplicarModo();
+        if (consultaCelular.matches && abaDoEndereco()) {
+            document.getElementById(decodeURIComponent(location.hash.slice(1)))?.scrollIntoView();
+        }
+    }
+
+    // 9. INDICADOR DE ATENDIMENTO DO COMERCIAL
+    // Usa o horário de chat-config.js (horarioComercial) no fuso de Brasília. Não considera feriados.
+    const indicador = document.getElementById('atendimento');
+    const horario = window.TATTICA_CHAT && window.TATTICA_CHAT.horarioComercial;
+
+    if (indicador && horario && Array.isArray(horario.dias) && horario.dias.length) {
+        const NOMES_DIA = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
+        const txt = indicador.querySelector('.atendimento__texto');
+        const hora = (n) => `${n}h`;
+
+        const agoraEmBrasilia = () => new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+
+        const proximaAbertura = (agora) => {
+            for (let passo = 0; passo <= 7; passo++) {
+                const dia = (agora.getDay() + passo) % 7;
+                if (!horario.dias.includes(dia)) continue;
+                if (passo === 0 && agora.getHours() >= horario.inicio) continue;
+                const quando = passo === 0 ? 'hoje' : passo === 1 ? 'amanhã' : NOMES_DIA[dia];
+                return `${quando}, às ${hora(horario.inicio)}`;
+            }
+            return null;
+        };
+
+        const atualizarIndicador = () => {
+            const agora = agoraEmBrasilia();
+            const aberto = horario.dias.includes(agora.getDay())
+                && agora.getHours() >= horario.inicio && agora.getHours() < horario.fim;
+            let texto;
+            if (aberto) {
+                texto = `Comercial em atendimento agora, até as ${hora(horario.fim)}.`;
+            } else {
+                const volta = proximaAbertura(agora);
+                texto = volta
+                    ? `Comercial fora do expediente. Volta ${volta}. Deixe seu pedido agora e ele responde no próximo dia útil.`
+                    : 'Comercial fora do expediente. Deixe seu pedido e ele retorna assim que possível.';
+            }
+            txt.textContent = texto;
+            indicador.classList.toggle('is-aberto', aberto);
+            indicador.hidden = false;
+        };
+
+        atualizarIndicador();
+        setInterval(atualizarIndicador, 60000);
     }
 
     // 7. ATUALIZAÇÃO AUTOMÁTICA DO ANO

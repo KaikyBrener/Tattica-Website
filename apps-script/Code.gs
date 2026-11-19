@@ -100,6 +100,9 @@ function doPost(e) {
     );
 
     const prioridade = textoPuro(dados.prioridade) || 'Normal';
+    // Pedido do modo homologação do site: marcado como teste na planilha e no e-mail
+    const teste = dados.ambiente === 'homologacao';
+    if (teste) dados.origem = 'TESTE ' + textoPuro(dados.origem);
     const linkWhatsApp = montarLinkWhatsApp(nome, digitos);
 
     // Ordem exata das colunas em CONFIG.CABECALHOS
@@ -131,7 +134,7 @@ function doPost(e) {
 
     // O pedido já está salvo; uma falha no e-mail não deve derrubar a resposta
     try {
-      enviarEmailPedido(dados, dataHora, prioridade, textoPuro(dados.nome), textoPuro(dados.telefone), linkWhatsApp);
+      enviarEmailPedido(dados, dataHora, prioridade, textoPuro(dados.nome), textoPuro(dados.telefone), linkWhatsApp, teste);
     } catch (erroEmail) {
       Logger.log('Falha ao enviar e-mail: ' + erroEmail.message);
     }
@@ -706,8 +709,8 @@ function obterOuCriarAba(ss) {
 /**
  * Envia o e-mail: versão visual (HTML) e, como reserva, versão em texto simples
  */
-function enviarEmailPedido(dados, dataHora, prioridade, nome, telefone, linkWhatsApp) {
-  const assunto = ('[' + prioridade + '] Novo pedido de orçamento: ' + nome).replace(/[\r\n]+/g, ' ');
+function enviarEmailPedido(dados, dataHora, prioridade, nome, telefone, linkWhatsApp, teste) {
+  const assunto = ((teste ? '[TESTE] ' : '') + '[' + prioridade + '] Novo pedido de orçamento: ' + nome).replace(/[\r\n]+/g, ' ');
 
   const pedido = {
     prioridade: prioridade,

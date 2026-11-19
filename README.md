@@ -6,7 +6,7 @@ Site institucional estático da Tattica (portaria virtual, Espírito Santo): apr
 
 - `index.html` — página única, em seções. Os ícones ficam em um sprite SVG no início do `<body>`.
 - `styles.css` — sistema de design do site (tokens em `:root`, componentes e responsivo).
-- `script.js` — menu responsivo, cabeçalho, link ativo da navegação, FAQ, botão de voltar ao topo, ano do rodapé e modal/formulário de orçamento (envia pelo WhatsApp).
+- `script.js` — menu responsivo, cabeçalho, link ativo da navegação, FAQ, botão de voltar ao topo, ano do rodapé e botões de orçamento, que abrem o assistente direto no fluxo de orçamento (sem JavaScript, o link vai para o WhatsApp).
 - `privacidade.html` — página de privacidade e LGPD (reaproveita o `styles.css`). Revisar com o jurídico antes de publicar: prazo de guarda e e-mail do encarregado.
 - `images/` — fotos, telas do aplicativo, logotipo e favicon.
   - `central-operacao.jpg` e `Celular*.jpeg` são os originais; o site usa as versões `.webp` geradas a partir deles.
@@ -22,6 +22,11 @@ python3 -m http.server 8000
 
 ---
 
+## Página no celular, indicador de atendimento e comparativo
+- **Abas no celular (até 767 px):** a página mostra um grupo de seções por vez (Portaria, Soluções, Aplicativo, Central e FAQ). O grupo de cada seção é o atributo `data-aba` no `index.html`, e a barra de abas é o `<nav id="abas">`. Cada seção mantém o endereço (`#torre`, `#faq`...), então links, menu e botão voltar funcionam. No computador, ou sem JavaScript, a página continua inteira, rolando como sempre.
+- **Indicador de atendimento:** no topo do site, mostra se o Comercial está em atendimento ou fora do expediente e quando volta. Usa `horarioComercial` do `chat-config.js` (o mesmo do chat) no fuso de Brasília. **Não considera feriados.** Confirmar o horário real com o Comercial.
+- **Comparativo portaria presencial × virtual:** seção `#comparativo`, tabela no computador e cartões no celular. São argumentos gerais, sem números. **Cada linha precisa ser validada pelo Comercial antes do uso real.**
+
 ## Demonstração: assistente virtual (chat) — projeto pessoal
 
 
@@ -29,6 +34,22 @@ python3 -m http.server 8000
 - `chat-config.js` — todo o conteúdo editável: WhatsApp do Comercial, horário, telefones, perguntas e respostas.
 - `chatbot.css` — visual, usando as cores e fontes do site.
 - `apps-script/Code.gs` — opcional e gratuito: registra cada pedido em uma planilha do Google, avisa por e-mail e cria um botão "Chamar no WhatsApp" para cada cliente.
+
+### Modo demonstração (MVP)
+O site está em `modo: 'demonstracao'` (topo do `chat-config.js`). Nesse modo:
+- todos os botões de orçamento abrem o chat direto no fluxo de orçamento, e o fluxo funciona até o fim;
+- nada sai do navegador: não grava na planilha, não envia e-mail, não manda métricas e não usa a IA;
+- o fim do orçamento avisa que a solicitação foi **simulada e não enviada** e mostra, em cartões marcados como prévia, o e-mail, a linha da planilha e a mensagem de WhatsApp que o Comercial receberia. O envio ao WhatsApp do Comercial não é oferecido;
+- o rodapé mostra "Versão de demonstração" e a política de privacidade mostra "Documento em revisão".
+
+Para apresentar o fluxo funcionando de verdade, use `modo: 'homologacao'`:
+1. Crie uma planilha só de teste, cole nela o `apps-script/Code.gs` com `EMAIL_DESTINO` de teste, rode `configurarTudo` e `instalarGatilhos` e publique como app da Web.
+2. Cole a URL em `appsScriptUrlTeste` no `chat-config.js`.
+3. Use dados fictícios. O pedido cai na planilha de teste, o e-mail chega com `[TESTE]` no assunto, o lembrete e o painel funcionam, e o chat mostra o que chegou. O WhatsApp do Comercial não é aberto.
+
+Sem `appsScriptUrlTeste`, a homologação volta a ser demonstração e nunca usa a planilha real.
+
+Para ligar o envio real, troque para `modo: 'producao'`. A integração com o Apps Script continua no código, só fica desligada na demonstração.
 
 ### Como o pedido chega ao Comercial
 1. O chat faz perguntas curtas (perfil, blocos, unidades, portaria atual, estrutura, internet de fibra, cabeamento do interfone, local, assembleia, nome e telefone) e pede o consentimento. No fim, mostra os pontos que o Comercial vai avaliar e oferece um resumo para levar à assembleia.
@@ -58,4 +79,5 @@ Com `iaUrl` preenchido em `chat-config.js`, aparece a opção "Digitar a minha p
 - Não guarda dados no site.
 
 ### Antes de qualquer uso real
+Trocar `modo` para `'producao'` em `chat-config.js`, tirar os avisos de demonstração (`footer__demo` no `index.html` e na `privacidade.html`, `legal__status` e `legal__note` na privacidade) e publicar o Apps Script numa conta Google da Tattica.
 Trocar `whatsappComercial` pelo número do Comercial, revisar todas as respostas em `chat-config.js` com a gerência e definir a resposta oficial para perguntas sobre reputação da empresa.

@@ -230,3 +230,13 @@
     background: url(images/favicon.png) center / cover no-repeat;
     box-shadow: 0 1px 3px rgba(15, 33, 64, .25);
 }
+
+/* Cartões de prévia: o que o Comercial recebe (modo demonstração e teste) */
+.chat__card { width: calc(100% - 38px); max-width: none; white-space: normal; }
+.chat__card-title { font-weight: 700; color: var(--navy-900); }
+.chat__card-tag { display: inline-block; margin: 4px 0 10px; padding: 2px 10px; border-radius: 999px; font-size: .75rem; font-weight: 600; color: var(--navy-700); background: var(--blue-100); }
+.chat__card-fields { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; margin: 0; font-size: .88rem; }
+.chat__card-fields dt { color: var(--muted); }
+.chat__card-fields dd { margin: 0; color: var(--ink); overflow-wrap: anywhere; }
+.chat__card-text { margin: 0; padding: 10px 12px; border-radius: 10px; font-size: .86rem; line-height: 1.45; white-space: pre-line; color: var(--ink); background: #e7f5ec; }
+.chat__card-btn { display: inline-block; margin-top: 12px; padding: 6px 14px; border-radius: 6px; font-size: .85rem; font-weight: 700; color: var(--white); background: #1a7f3c; }

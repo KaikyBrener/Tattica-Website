@@ -2,10 +2,22 @@
 (() => {
     'use strict';
     const CFG = window.TATTICA_CHAT;
+    if (!CFG) return;
     /* Em localhost, usa o proxy local da IA, se o iaUrl publicado estiver vazio */
     const emLocalhost = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
     if (!CFG.iaUrl && emLocalhost && CFG.iaUrlLocal) CFG.iaUrl = CFG.iaUrlLocal;
-    if (!CFG) return;
+    /* Modo do site (chat-config.js):
+       'demonstracao' = nada sai do navegador; o fim do orçamento mostra uma prévia do que o Comercial receberia.
+       'homologacao'  = envia de verdade, mas só para a planilha de TESTE (appsScriptUrlTeste), com dados fictícios.
+       'producao'     = envia para a planilha real (appsScriptUrl).
+       Sem appsScriptUrlTeste, a homologação volta a ser demonstração: nunca cai na planilha real por engano. */
+    const MODO = CFG.modo === 'producao' ? 'producao'
+        : (CFG.modo === 'homologacao' && /^https:\/\//.test(CFG.appsScriptUrlTeste || '')) ? 'homologacao'
+        : 'demonstracao';
+    const DEMO = MODO === 'demonstracao';
+    const TESTE = MODO === 'homologacao';
+    const URL_SCRIPT = MODO === 'producao' ? CFG.appsScriptUrl : TESTE ? CFG.appsScriptUrlTeste : '';
+    if (MODO !== 'producao') CFG.iaUrl = '';
 
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const wait = (ms) => new Promise(res => setTimeout(res, reduceMotion ? 0 : ms));
@@ -63,18 +75,18 @@
     let filaTimer;
     function enviarFila() {
         clearTimeout(filaTimer);
-        if (!fila.length || !CFG.appsScriptUrl) { fila = []; return; }
+        if (!fila.length || !URL_SCRIPT) { fila = []; return; }
         const corpo = JSON.stringify({ tipo: 'eventos', sessao, eventos: fila });
         fila = [];
         try {
             const blob = new Blob([corpo], { type: 'text/plain;charset=utf-8' });
-            if (!(navigator.sendBeacon && navigator.sendBeacon(CFG.appsScriptUrl, blob))) {
-                fetch(CFG.appsScriptUrl, { method: 'POST', body: corpo, headers: { 'Content-Type': 'text/plain;charset=utf-8' }, keepalive: true, mode: 'no-cors' }).catch(() => {});
+            if (!(navigator.sendBeacon && navigator.sendBeacon(URL_SCRIPT, blob))) {
+                fetch(URL_SCRIPT, { method: 'POST', body: corpo, headers: { 'Content-Type': 'text/plain;charset=utf-8' }, keepalive: true, mode: 'no-cors' }).catch(() => {});
             }
         } catch (_) { /* métrica nunca pode atrapalhar o chat */ }
     }
     function m(evento, detalhe = '') {
-        if (!CFG.appsScriptUrl || CFG.metricas === false) return;
+        if (!URL_SCRIPT || CFG.metricas === false) return;
         fila.push({ evento, detalhe: String(detalhe).slice(0, 80), quando: new Date().toISOString() });
         if (fila.length >= 8) return enviarFila();
         clearTimeout(filaTimer);
@@ -86,6 +98,8 @@
 
     let token = 0;               // muda ao recomeçar: interrompe fluxos antigos
     let started = false;
+    let fluxo = '';              // fluxo em andamento ('orcamento' ou vazio)
+    let origemOrcamento = '';    // seção do site cujo botão abriu o orçamento
     class Cancel extends Error {}
 
     const scrollEnd = () => log.scrollTo({ top: log.scrollHeight, behavior: reduceMotion ? 'auto' : 'smooth' });
@@ -117,6 +131,46 @@
         el.className = 'chat__msg chat__msg--bot is-typing';
         el.setAttribute('aria-hidden', 'true');
         el.innerHTML = '<span class="chat__dot"></span><span class="chat__dot"></span><span class="chat__dot"></span>';
+        log.appendChild(el);
+        scrollEnd();
+        return el;
+    }
+
+    /* Cartão de prévia (o que o Comercial recebe). Só textContent: nada digitado vira HTML. */
+    function addCartao({ titulo, selo, campos = [], texto = '', botao = '' }) {
+        const el = document.createElement('div');
+        el.className = 'chat__msg chat__msg--bot chat__card is-written';
+        const cab = document.createElement('p');
+        cab.className = 'chat__card-title';
+        cab.textContent = titulo;
+        const tag = document.createElement('span');
+        tag.className = 'chat__card-tag';
+        tag.textContent = selo;
+        el.append(cab, tag);
+        if (campos.length) {
+            const dl = document.createElement('dl');
+            dl.className = 'chat__card-fields';
+            campos.forEach(([k, v]) => {
+                const dt = document.createElement('dt'); dt.textContent = k;
+                const dd = document.createElement('dd'); dd.textContent = v;
+                dl.append(dt, dd);
+            });
+            el.appendChild(dl);
+        }
+        if (texto) {
+            const pre = document.createElement('p');
+            pre.className = 'chat__card-text';
+            pre.textContent = texto;
+            el.appendChild(pre);
+        }
+        if (botao) {
+            const b = document.createElement('span');
+            b.className = 'chat__card-btn';
+            b.setAttribute('aria-hidden', 'true');
+            b.textContent = botao;
+            el.appendChild(b);
+        }
+        el.dataset.time = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' });
         log.appendChild(el);
         scrollEnd();
         return el;
@@ -323,6 +377,8 @@
 
     /* ---------- Fluxos ---------- */
     async function menu(tok, intro = true) {
+        fluxo = '';
+        origemOrcamento = '';
         if (intro) await say(tok, 'Oi! 👋 Eu sou o assistente virtual da Tattica.', 'Como posso ajudar você hoje?');
         const escolha = await choose(tok, [
             'Quero contratar ou pedir orçamento',
@@ -465,10 +521,15 @@
     }
 
     /* ---------- Orçamento: qualifica e entrega ao Comercial ---------- */
-    async function orcamento(tok) {
+    async function orcamento(tok, direto = false) {
         const lead = {};
-        await say(tok, 'Ótimo! Vou fazer algumas perguntas rápidas para o Comercial já chegar preparado. Leva cerca de 1 minuto.');
-        m('orc_inicio');
+        fluxo = 'orcamento';
+        await say(tok, direto
+            ? 'Oi! Eu sou o assistente virtual da Tattica. Vou fazer algumas perguntas rápidas para preparar o seu orçamento.'
+            : 'Ótimo! Vou fazer algumas perguntas rápidas para o Comercial já chegar preparado.');
+        if (DEMO) await say(tok, 'Esta é uma versão de demonstração: as suas respostas não serão enviadas a ninguém.');
+        if (TESTE) await say(tok, 'Ambiente de teste: o pedido vai para uma planilha de demonstração, e não para o Comercial. Use dados fictícios.');
+        m('orc_inicio', origemOrcamento || 'menu');
         m('orc_passo', 'perfil');
         await say(tok, 'Quem é você?');
         lead.perfil = (await choose(tok, ['Síndico', 'Administradora', 'Morador (quero indicar)', 'Outro'])).label;
@@ -501,14 +562,24 @@
         lead.telefone = await ask(tok, 'Qual o seu telefone ou WhatsApp?', 'phone');
 
         m('orc_passo', 'autorizacao');
-        await say(tok, 'Posso enviar estes dados ao Comercial da Tattica? Eles usam só para retornar o seu contato. Não envie documentos por aqui.');
-        const ok = await choose(tok, ['Autorizo e quero enviar', { label: 'Ler a política de privacidade', href: 'privacidade.html' }, 'Cancelar']);
-        if (ok.label === 'Cancelar') { m('orc_cancelado'); await say(tok, 'Tudo bem, nada foi enviado.'); return menu(tok, false); }
+        if (DEMO) {
+            await say(tok, 'Tudo pronto para concluir a simulação. Como é uma demonstração, nada será enviado ao Comercial.');
+        } else if (TESTE) {
+            await say(tok, 'Posso registrar este pedido de teste na planilha de demonstração?');
+        } else {
+            await say(tok, 'Posso enviar estes dados ao Comercial da Tattica? Eles usam só para retornar o seu contato. Não envie documentos por aqui.');
+        }
+        const ok = await choose(tok, [DEMO ? 'Concluir a simulação' : TESTE ? 'Registrar pedido de teste' : 'Autorizo e quero enviar', { label: 'Ler a política de privacidade', href: 'privacidade.html' }, 'Cancelar']);
+        if (ok.label === 'Cancelar') { m('orc_cancelado'); fluxo = ''; await say(tok, 'Tudo bem, nada foi enviado.'); return menu(tok, false); }
 
         lead.prioridade = lead.assembleia.startsWith('Sim') ? 'Alta' : lead.assembleia.startsWith('Vamos') ? 'Média' : 'Normal';
         lead.consentimento = 'Sim';
-        lead.origem = location.pathname;
+        lead.origem = location.pathname + (origemOrcamento ? '#' + origemOrcamento : '');
         lead.criadoEm = new Date().toISOString();
+        if (TESTE) lead.ambiente = 'homologacao';
+
+        if (DEMO) return concluirSimulacao(tok, lead);
+        if (TESTE) return concluirTeste(tok, lead);
 
         let situacao = await registrarPedido(lead);
         alive(tok);
@@ -541,10 +612,89 @@
         await say(tok, lead.pontos.length
             ? 'Pontos que o Comercial vai avaliar com vocês: ' + lead.pontos.join('; ') + '.'
             : 'Pela sua resposta, não há pendências a avaliar agora. O Comercial confirma os detalhes na proposta.');
+        return finalizarOrcamento(tok, lead, [{ label: 'Enviar ao Comercial pelo WhatsApp', href: wa(texto) }]);
+    }
+
+    /* Mesmos prazos do lembrete do apps-script/Code.gs (horas úteis sem contato) */
+    const PRAZO_LEMBRETE = { 'Alta': 2, 'Média': 4, 'Normal': 8 };
+
+    /* Mostra, em cartões, o que o Comercial recebe com este pedido: e-mail, linha da planilha e WhatsApp.
+       selos: { envio } diz se aquilo foi de fato enviado (teste) ou é só prévia (demonstração). */
+    async function mostrarRecebimento(tok, lead, selos) {
+        const agora = new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Sao_Paulo' });
+        const blocos = lead.blocos === '1' ? '1 bloco' : `${lead.blocos} blocos`;
+        const pontos = lead.pontos.length ? lead.pontos.join('; ') : 'nenhum';
+        const passo = async (fn) => { await wait(RITMO.pausa); alive(tok); fn(); };
+        await passo(() => addCartao({
+            titulo: 'E-mail para o Comercial',
+            selo: selos.envio,
+            campos: [
+                ['Assunto', `[${lead.prioridade}] Novo pedido de orçamento: ${lead.nome}`],
+                ['Telefone', lead.telefone], ['Perfil', lead.perfil], ['Local', lead.local],
+                ['Porte', `${blocos}, cerca de ${lead.unidades} unidades`], ['Portaria atual', lead.portaria],
+                ['Assembleia', lead.assembleia], ['Pontos a avaliar', pontos]
+            ],
+            botao: 'Chamar no WhatsApp'
+        }));
+        await passo(() => addCartao({
+            titulo: 'Nova linha na planilha Pedidos',
+            selo: selos.envio,
+            campos: [
+                ['Data e hora', agora], ['Prioridade', lead.prioridade], ['Nome', lead.nome],
+                ['Telefone', lead.telefone], ['Local', lead.local], ['Status', 'Novo'], ['Origem', lead.origem]
+            ]
+        }));
+        await passo(() => addCartao({
+            titulo: 'Mensagem pronta para o WhatsApp do Comercial',
+            selo: selos.whatsapp,
+            texto: mensagemComercial(lead).replace(/\*/g, '') // sem os asteriscos de negrito do WhatsApp
+        }));
+        const prazo = PRAZO_LEMBRETE[lead.prioridade] || PRAZO_LEMBRETE['Normal'];
+        await say(tok, `Depois disso, o pedido aparece no Painel da planilha. Se o status continuar em "Novo" por mais de ${prazo} h úteis (prioridade ${lead.prioridade}), o Comercial recebe um lembrete por e-mail a cada 30 minutos, no expediente.`);
+    }
+
+    /* Modo demonstração: nada sai do navegador. Mostra o que o Comercial receberia, deixando claro que é prévia. */
+    async function concluirSimulacao(tok, lead) {
+        setStatus('digitando…');
+        const typing = addTyping();
+        await wait(700);
+        alive(tok);
+        typing.remove();
+        setStatus('Online');
+        m('orc_resultado', 'simulado');
+        await say(tok, 'Simulação concluída. Esta solicitação NÃO foi enviada: nenhum dado saiu do seu navegador.');
+        await say(tok, 'Veja o que o Comercial da Tattica receberia com este pedido:');
+        await mostrarRecebimento(tok, lead, { envio: 'Prévia · nada foi enviado', whatsapp: 'Prévia · nada foi enviado' });
+        return finalizarOrcamento(tok, lead, []);
+    }
+
+    /* Modo homologação: envia de verdade para a planilha de teste e mostra o que chegou. Não abre o WhatsApp do Comercial. */
+    async function concluirTeste(tok, lead) {
+        for (;;) {
+            setStatus('digitando…');
+            const typing = addTyping();
+            const situacao = await registrarPedido(lead);
+            alive(tok);
+            typing.remove();
+            setStatus('Online');
+            m('orc_resultado', situacao);
+            if (situacao === 'confirmado') break;
+            await say(tok, 'Não consegui confirmar o registro na planilha de teste. Confira o appsScriptUrlTeste e se o script de teste está publicado.');
+            const r = await choose(tok, ['Tentar enviar de novo', 'Voltar ao início']);
+            if (r.label.startsWith('Voltar')) return menu(tok, false);
+        }
+        await say(tok, 'Pedido de teste registrado na planilha de demonstração. O e-mail de teste também foi enviado.');
+        await mostrarRecebimento(tok, lead, { envio: 'Enviado à planilha de teste', whatsapp: 'Prévia · no teste o WhatsApp não é aberto' });
+        return finalizarOrcamento(tok, lead, []);
+    }
+
+    async function finalizarOrcamento(tok, lead, acoes) {
+        fluxo = '';
+        origemOrcamento = '';
         let resumoFeito = false;
         for (;;) {
             const r = await choose(tok, [
-                { label: 'Enviar ao Comercial pelo WhatsApp', href: wa(texto) },
+                ...acoes,
                 ...(resumoFeito ? [] : ['Copiar resumo para a assembleia']),
                 'Voltar ao início'
             ]);
@@ -563,11 +713,11 @@
        Retorna 'confirmado', 'falhou' ou 'sem-planilha' (quando não há script configurado).
        O Content-Type text/plain evita a verificação prévia (preflight) do navegador. */
     async function registrarPedido(lead) {
-        if (!CFG.appsScriptUrl) return 'sem-planilha';
+        if (!URL_SCRIPT) return 'sem-planilha';
         const ctrl = new AbortController();
         const timer = setTimeout(() => ctrl.abort(), 20000);
         try {
-            const r = await fetch(CFG.appsScriptUrl, {
+            const r = await fetch(URL_SCRIPT, {
                 method: 'POST',
                 headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                 body: JSON.stringify(lead),
@@ -612,15 +762,23 @@
     }
     hint.addEventListener('click', () => { m('balao_clique'); hideHint(); open(); });
 
-    function open() {
+    function open(opcoes = {}) {
         hideHint();
+        const jaAberto = !panel.hidden;
         panel.classList.remove('is-closing');
         panel.hidden = false;
         launcher.setAttribute('aria-expanded', 'true');
         launcher.hidden = true;
         document.body.classList.add('chat-open');
         m('chat_aberto', dentroDoHorario() ? 'no horário' : 'fora do horário');
-        if (!started) { started = true; run(menu); }
+        if (opcoes.orcamento && !(jaAberto && fluxo === 'orcamento')) {
+            /* Botão "Solicitar orçamento" do site: vai direto ao fluxo de orçamento (o mesmo do menu) */
+            started = true;
+            origemOrcamento = String(opcoes.origem || '').replace(/[^\w-]/g, '').slice(0, 40);
+            m('cta_orcamento', origemOrcamento);
+            const origem = origemOrcamento;
+            run(tok => { origemOrcamento = origem; return orcamento(tok, true); });
+        } else if (!started) { started = true; run(menu); }
         panel.querySelector('button, input, a')?.focus({ preventScroll: true });
     }
     function close() {
@@ -637,7 +795,10 @@
         panel.addEventListener('animationend', finish, { once: true });
     }
 
-    launcher.addEventListener('click', open);
+    launcher.addEventListener('click', () => open());
+
+    /* Usado pelos botões de orçamento do site (script.js) */
+    window.TatticaChat = { abrirOrcamento: (origem) => open({ orcamento: true, origem }) };
     root.querySelector('[data-chat-close]').addEventListener('click', close);
     const restartBtn = root.querySelector('[data-chat-restart]');
     restartBtn.addEventListener('click', () => {

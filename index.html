@@ -167,14 +167,13 @@
             <nav class="main-nav" id="main-nav" aria-label="Principal">
                 <ul class="nav-list">
                     <li><a href="#solucoes" class="nav-link">Soluções</a></li>
+                    <li><a href="#torre" class="nav-link">Torre de Vigilância</a></li>
                     <li><a href="#tattica-center" class="nav-link">Tattica Center</a></li>
-                    <li><a href="#tecnologia" class="nav-link">Tecnologia</a></li>
                     <li><a href="#central" class="nav-link">Central</a></li>
-                    <li><a href="#beneficios" class="nav-link">Benefícios</a></li>
+                    <li><a href="#faq" class="nav-link">FAQ</a></li>
                     <li><a href="#contato" class="nav-link">Contato</a></li>
-                    <li><a href="#trabalhe-conosco" class="nav-link">Trabalhe conosco</a></li>
                 </ul>
-                <a href="#orcamento-modal" class="btn btn--primary nav-cta quote-trigger" aria-haspopup="dialog">Solicitar orçamento</a>
+                <a href="https://wa.me/552730262196?text=Ol%C3%A1!%20Gostaria%20de%20solicitar%20um%20or%C3%A7amento." target="_blank" rel="noopener noreferrer" class="btn btn--primary nav-cta quote-trigger" aria-haspopup="dialog" aria-controls="chat-panel">Solicitar orçamento</a>
             </nav>
         </div>
     </header>
@@ -187,12 +186,16 @@
                     <h1 id="hero-title" class="hero__title">Reduza a taxa do condomínio sem abrir mão da segurança.</h1>
                     <p class="hero__lead">Portaria virtual com central de monitoramento 24 horas, controle de acesso rígido e aplicativo próprio, para condomínios do Espírito Santo.</p>
                     <div class="hero__actions">
-                        <a href="#orcamento-modal" class="btn btn--primary btn--lg quote-trigger" aria-haspopup="dialog">Solicitar orçamento</a>
+                        <a href="https://wa.me/552730262196?text=Ol%C3%A1!%20Gostaria%20de%20solicitar%20um%20or%C3%A7amento." target="_blank" rel="noopener noreferrer" class="btn btn--primary btn--lg quote-trigger" aria-haspopup="dialog" aria-controls="chat-panel">Solicitar orçamento</a>
                         <a href="https://wa.me/552730262196" class="btn btn--ghost btn--lg" target="_blank" rel="noopener noreferrer">
                             <svg class="icon" aria-hidden="true"><use href="#i-whatsapp"/></svg>
                             Falar no WhatsApp
                         </a>
                     </div>
+                    <p class="atendimento" id="atendimento" role="status" hidden>
+                        <span class="atendimento__dot" aria-hidden="true"></span>
+                        <span class="atendimento__texto"></span>
+                    </p>
                     <dl class="hero__facts">
                         <div>
                             <dt>Fibra óptica</dt>
@@ -218,8 +221,19 @@
             </div>
         </section>
 
+        <!-- ABAS (só aparecem no celular, com JavaScript; sem JavaScript a página inteira continua visível) -->
+        <nav class="abas" id="abas" aria-label="Seções do site" hidden>
+            <ul class="abas__lista">
+                <li><a href="#apresentacao" class="abas__link" data-aba-link="portaria">Portaria</a></li>
+                <li><a href="#solucoes" class="abas__link" data-aba-link="solucoes">Soluções</a></li>
+                <li><a href="#tattica-center" class="abas__link" data-aba-link="app">Aplicativo</a></li>
+                <li><a href="#central" class="abas__link" data-aba-link="central">Central</a></li>
+                <li><a href="#faq" class="abas__link" data-aba-link="faq">FAQ</a></li>
+            </ul>
+        </nav>
+
         <!-- 3. APRESENTAÇÃO -->
-        <section id="apresentacao" class="section section--white" aria-labelledby="apresentacao-title">
+        <section id="apresentacao" data-aba="portaria" class="section section--white" aria-labelledby="apresentacao-title">
             <div class="container split">
                 <div class="split__lead">
                     <h2 id="apresentacao-title">Uma central que atende o seu condomínio 24 horas por dia.</h2>
@@ -252,12 +266,12 @@
         </section>
 
         <!-- 4. SOLUÇÕES -->
-        <section id="solucoes" class="section section--paper" aria-labelledby="solucoes-title">
+        <section id="solucoes" data-aba="solucoes" class="section section--paper" aria-labelledby="solucoes-title">
             <div class="container split split--sticky">
                 <div class="split__lead">
                     <h2 id="solucoes-title">Três frentes de proteção, operadas pela mesma equipe.</h2>
                     <p>Portaria, acesso e câmeras trabalham juntos, com a central como ponto de decisão.</p>
-                    <a href="#orcamento-modal" class="btn btn--primary quote-trigger" aria-haspopup="dialog">Solicitar orçamento</a>
+                    <a href="https://wa.me/552730262196?text=Ol%C3%A1!%20Gostaria%20de%20solicitar%20um%20or%C3%A7amento." target="_blank" rel="noopener noreferrer" class="btn btn--primary quote-trigger" aria-haspopup="dialog" aria-controls="chat-panel">Solicitar orçamento</a>
                 </div>
 
                 <ul class="solutions">
@@ -287,7 +301,7 @@
         </section>
 
         <!-- 4.1 COMO FUNCIONA -->
-        <section id="como-funciona" class="section section--white" aria-labelledby="como-title">
+        <section id="como-funciona" data-aba="portaria" class="section section--white" aria-labelledby="como-title">
             <div class="container">
                 <header class="section-head">
                     <h2 id="como-title">Como a portaria virtual atende um visitante.</h2>
@@ -336,7 +350,7 @@
         </section>
 
         <!-- 5. TATTICA CENTER -->
-        <section id="tattica-center" class="section section--app" aria-labelledby="app-title">
+        <section id="tattica-center" data-aba="app" class="section section--app" aria-labelledby="app-title">
             <div class="container app">
                 <div class="app__copy">
                     <h2 id="app-title">Tattica Center, o aplicativo do condomínio.</h2>
@@ -353,7 +367,7 @@
                         <li><svg class="icon" aria-hidden="true"><use href="#i-siren"/></svg><span>Emergência e WhatsApp a um toque</span></li>
                     </ul>
 
-                    <a href="#orcamento-modal" class="btn btn--primary quote-trigger" aria-haspopup="dialog">Quero contratar</a>
+                    <a href="https://wa.me/552730262196?text=Ol%C3%A1!%20Gostaria%20de%20solicitar%20um%20or%C3%A7amento." target="_blank" rel="noopener noreferrer" class="btn btn--primary quote-trigger" aria-haspopup="dialog" aria-controls="chat-panel">Quero contratar</a>
                 </div>
 
                 <div class="app__visual">
@@ -371,10 +385,29 @@
                     <p class="app__caption">Telas reais do aplicativo: login, início e gestão do apartamento.</p>
                 </div>
             </div>
+
+            <div class="container app-extra">
+                <div class="app-extra__block">
+                    <h3>O que muda na rotina do condomínio</h3>
+                    <ul class="app-cards">
+                        <li><svg class="icon" aria-hidden="true"><use href="#i-unlock"/></svg><div><strong>Entrada sem chave nem cartão</strong><span>O morador abre portas e portões pelo celular e vê a câmera do local antes de enviar o comando.</span></div></li>
+                        <li><svg class="icon" aria-hidden="true"><use href="#i-key"/></svg><div><strong>Visitante com hora marcada</strong><span>A chave virtual define quantos acessos e em que horário. Fora dele, a chave não abre.</span></div></li>
+                        <li><svg class="icon" aria-hidden="true"><use href="#i-calendar"/></svg><div><strong>Áreas comuns sem papelada</strong><span>Reservas e agendamentos feitos pelo aplicativo, com as normas do condomínio à vista.</span></div></li>
+                        <li><svg class="icon" aria-hidden="true"><use href="#i-camera"/></svg><div><strong>Câmeras na palma da mão</strong><span>O morador acompanha as imagens do condomínio em tempo real, quando quiser.</span></div></li>
+                        <li><svg class="icon" aria-hidden="true"><use href="#i-users"/></svg><div><strong>Cadastro organizado por apartamento</strong><span>O morador responsável cadastra quem mora com ele, e cada pessoa tem o próprio acesso.</span></div></li>
+                        <li><svg class="icon" aria-hidden="true"><use href="#i-fingerprint"/></svg><div><strong>Biometria facial nas portas</strong><span>Entrada pelas portas de pedestre com o rosto, integrada ao mesmo aplicativo.</span></div></li>
+                    </ul>
+                </div>
+
+                <div class="app-extra__cta">
+                    <p>Quer ver o Tattica Center funcionando no seu condomínio?</p>
+                    <a href="https://wa.me/552730262196?text=Ol%C3%A1!%20Gostaria%20de%20solicitar%20um%20or%C3%A7amento." target="_blank" rel="noopener noreferrer" class="btn btn--primary quote-trigger" aria-haspopup="dialog" aria-controls="chat-panel">Solicitar orçamento</a>
+                </div>
+            </div>
         </section>
 
         <!-- 6. EQUIPAMENTOS E TECNOLOGIA -->
-        <section id="tecnologia" class="section section--white" aria-labelledby="tec-title">
+        <section id="tecnologia" data-aba="solucoes" class="section section--white" aria-labelledby="tec-title">
             <div class="container split">
                 <div class="split__lead">
                     <h2 id="tec-title">Equipamentos e tecnologia da operação.</h2>
@@ -413,7 +446,7 @@
 
         <!-- 6b. TORRE DE VIGILÂNCIA -->
         <!-- Confirmar com a Tattica antes de publicar: alcance das câmeras e energia de backup da torre. -->
-        <section id="torre" class="section section--paper" aria-labelledby="torre-title">
+        <section id="torre" data-aba="solucoes" class="section section--paper" aria-labelledby="torre-title">
             <div class="container torre">
                 <figure class="torre__stage">
                     <div class="torre__figure">
@@ -439,7 +472,7 @@
                         <li><svg class="icon" aria-hidden="true"><use href="#i-siren"/></svg><span><strong>Sinalizador luminoso</strong> que deixa a vigilância visível de longe e inibe a ação antes de alguém chegar ao portão.</span></li>
                         <li><svg class="icon" aria-hidden="true"><use href="#i-monitor"/></svg><span><strong>Acompanhada pela central 24 horas</strong>, pela mesma equipe da portaria.</span></li>
                     </ul>
-                    <a href="#orcamento-modal" class="btn btn--primary quote-trigger" aria-haspopup="dialog">Quero a torre no meu condomínio</a>
+                    <a href="https://wa.me/552730262196?text=Ol%C3%A1!%20Gostaria%20de%20solicitar%20um%20or%C3%A7amento." target="_blank" rel="noopener noreferrer" class="btn btn--primary quote-trigger" aria-haspopup="dialog" aria-controls="chat-panel">Quero a torre no meu condomínio</a>
                 </div>
             </div>
 
@@ -472,7 +505,7 @@
         </section>
 
         <!-- 7. CENTRAL DE MONITORAMENTO -->
-        <section id="central" class="section section--dark" aria-labelledby="central-title">
+        <section id="central" data-aba="central" class="section section--dark" aria-labelledby="central-title">
             <div class="container central">
                 <figure class="central__media">
                     <div class="viewfinder">
@@ -495,7 +528,7 @@
         </section>
 
         <!-- 8. BENEFÍCIOS PARA CONDOMÍNIOS -->
-        <section id="beneficios" class="section section--paper" aria-labelledby="beneficios-title">
+        <section id="beneficios" data-aba="portaria" class="section section--paper" aria-labelledby="beneficios-title">
             <div class="container split">
                 <div class="split__lead">
                     <h2 id="beneficios-title">O que o condomínio ganha com a portaria virtual.</h2>
@@ -527,8 +560,65 @@
             </div>
         </section>
 
+        <!-- 8.1 COMPARATIVO: portaria presencial x virtual (argumentos gerais; o Comercial deve validar cada linha) -->
+        <section id="comparativo" data-aba="portaria" class="section section--white" aria-labelledby="comparativo-title">
+            <div class="container">
+                <header class="section-head">
+                    <h2 id="comparativo-title">Portaria presencial ou virtual: o que muda no dia a dia.</h2>
+                    <p>Uma comparação geral. Cada condomínio tem uma realidade, e o Comercial detalha tudo no orçamento.</p>
+                </header>
+
+                <table class="compare">
+                    <caption class="visually-hidden">Comparação entre portaria presencial e portaria virtual Tattica</caption>
+                    <thead>
+                        <tr>
+                            <th scope="col">Ponto de comparação</th>
+                            <th scope="col">Portaria presencial</th>
+                            <th scope="col" class="compare__tattica">Portaria virtual Tattica</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <th scope="row">Atendimento ao visitante</th>
+                            <td data-label="Portaria presencial">Porteiro na guarita do condomínio.</td>
+                            <td data-label="Portaria virtual Tattica" class="compare__tattica">Operador treinado da central, pelo interfone.</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Cobertura</th>
+                            <td data-label="Portaria presencial">Depende da escala de turnos do condomínio.</td>
+                            <td data-label="Portaria virtual Tattica" class="compare__tattica">Central de monitoramento 24 horas, 7 dias por semana.</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Registro dos acessos</th>
+                            <td data-label="Portaria presencial">Depende do controle feito pela portaria.</td>
+                            <td data-label="Portaria virtual Tattica" class="compare__tattica">Cada operação registrada no sistema.</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Acesso dos moradores</th>
+                            <td data-label="Portaria presencial">Reconhecimento pelo porteiro ou por chaves e tags.</td>
+                            <td data-label="Portaria virtual Tattica" class="compare__tattica">Tags, biometria, QR Code e aplicativo, conforme a estrutura instalada.</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Acompanhamento pelo condomínio</th>
+                            <td data-label="Portaria presencial">Informações passadas pela portaria.</td>
+                            <td data-label="Portaria virtual Tattica" class="compare__tattica">Acessos, câmeras e liberações pelo Tattica Center.</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Custo fixo</th>
+                            <td data-label="Portaria presencial">Folha e encargos do quadro de porteiros.</td>
+                            <td data-label="Portaria virtual Tattica" class="compare__tattica">Reduz custos fixos. O valor depende de cada condomínio.</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <p class="compare__cta">
+                    <a href="https://wa.me/552730262196?text=Ol%C3%A1!%20Gostaria%20de%20solicitar%20um%20or%C3%A7amento." target="_blank" rel="noopener noreferrer" class="btn btn--primary quote-trigger" aria-haspopup="dialog" aria-controls="chat-panel">Simular com o meu condomínio</a>
+                </p>
+            </div>
+        </section>
+
         <!-- 9. CREDIBILIDADE E DIFERENCIAIS -->
-        <section id="diferenciais" class="section section--white" aria-labelledby="dif-title">
+        <section id="diferenciais" data-aba="central" class="section section--white" aria-labelledby="dif-title">
             <div class="container">
                 <header class="section-head">
                     <h2 id="dif-title">Por que escolher a Tattica.</h2>
@@ -569,7 +659,7 @@
         </section>
 
         <!-- 10. FAQ -->
-        <section id="faq" class="section section--paper" aria-labelledby="faq-title">
+        <section id="faq" data-aba="faq" class="section section--paper" aria-labelledby="faq-title">
             <div class="container split">
                 <div class="split__lead">
                     <h2 id="faq-title">Perguntas frequentes.</h2>
@@ -635,7 +725,7 @@
                     <p>Conte quantos blocos e acessos o condomínio tem e nossa equipe comercial prepara uma proposta.</p>
 
                     <div class="contact__actions">
-                        <a href="#orcamento-modal" class="btn btn--primary btn--lg quote-trigger" aria-haspopup="dialog">Solicitar orçamento</a>
+                        <a href="https://wa.me/552730262196?text=Ol%C3%A1!%20Gostaria%20de%20solicitar%20um%20or%C3%A7amento." target="_blank" rel="noopener noreferrer" class="btn btn--primary btn--lg quote-trigger" aria-haspopup="dialog" aria-controls="chat-panel">Solicitar orçamento</a>
                         <a href="https://wa.me/552730262196" class="btn btn--ghost-light btn--lg" target="_blank" rel="noopener noreferrer">
                             <svg class="icon" aria-hidden="true"><use href="#i-whatsapp"/></svg>
                             WhatsApp
@@ -689,32 +779,6 @@
         </section>
     </main>
 
-    <!-- Modal de solicitação de orçamento -->
-    <div class="quote-modal" id="orcamento-modal" role="dialog" aria-modal="true" aria-labelledby="quote-modal-title" hidden>
-        <div class="quote-modal__backdrop" data-quote-close></div>
-        <div class="quote-modal__panel">
-            <button type="button" class="quote-modal__close" aria-label="Fechar formulário de orçamento" data-quote-close>&times;</button>
-            <h2 class="quote-modal__title" id="quote-modal-title">Solicitar orçamento</h2>
-            <p class="quote-modal__intro">Preencha seus dados. Ao enviar, o WhatsApp abre com a sua solicitação pronta para a nossa equipe.</p>
-            <form class="quote-form" id="quote-form">
-                <div class="quote-form__field">
-                    <label for="quote-name">Nome</label>
-                    <input type="text" id="quote-name" name="nome" autocomplete="name" required>
-                </div>
-                <div class="quote-form__field">
-                    <label for="quote-email">E-mail</label>
-                    <input type="email" id="quote-email" name="email" autocomplete="email" required>
-                </div>
-                <div class="quote-form__field">
-                    <label for="quote-phone">Número de telefone</label>
-                    <input type="tel" id="quote-phone" name="telefone" autocomplete="tel" inputmode="tel" placeholder="(27) 99999-9999" maxlength="15" required>
-                </div>
-                <p class="quote-form__message">Desejo solicitar um orçamento.</p>
-                <button type="submit" class="btn btn--primary btn--lg quote-form__submit">Enviar pelo WhatsApp</button>
-            </form>
-        </div>
-    </div>
-
     <!-- 12. FOOTER -->
     <footer class="footer">
         <div class="container">
@@ -731,11 +795,13 @@
                     <h2 class="footer__title">Navegação</h2>
                     <ul>
                         <li><a href="#solucoes">Soluções</a></li>
-                        <li><a href="#tattica-center">Tattica Center</a></li>
+                        <li><a href="#torre">Torre de Vigilância</a></li>
+                        <li><a href="#tattica-center">Aplicativo Tattica Center</a></li>
                         <li><a href="#tecnologia">Tecnologia</a></li>
                         <li><a href="#central">Central de monitoramento</a></li>
                         <li><a href="#beneficios">Benefícios</a></li>
                         <li><a href="#faq">Perguntas frequentes</a></li>
+                        <li><a href="#trabalhe-conosco">Trabalhe conosco</a></li>
                     </ul>
                 </nav>
 
@@ -762,7 +828,7 @@
             </div>
 
             <div class="footer__bottom">
-                <p>CNPJ 38.299.429/0001-02 - Tattica Tecnologia · <a href="privacidade.html">Privacidade e LGPD</a></p>
+                <p>CNPJ 38.299.429/0001-02 - Tattica Tecnologia · <a href="privacidade.html">Privacidade e LGPD</a> · <span class="footer__demo">Versão de demonstração</span></p>
                 <p>&copy; <span id="current-year">2026</span> Grupo Tattica - Setor de Tecnologia. Todos os direitos reservados.</p>
             </div>
         </div>
