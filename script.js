@@ -202,6 +202,51 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // 9. INDICADOR DE ATENDIMENTO DO COMERCIAL
+    // Usa o horário de chat-config.js (horarioComercial) no fuso de Brasília. Não considera feriados.
+    const indicador = document.getElementById('atendimento');
+    const horario = window.TATTICA_CHAT && window.TATTICA_CHAT.horarioComercial;
+
+    if (indicador && horario && Array.isArray(horario.dias) && horario.dias.length) {
+        const NOMES_DIA = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
+        const txt = indicador.querySelector('.atendimento__texto');
+        const hora = (n) => `${n}h`;
+
+        const agoraEmBrasilia = () => new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+
+        const proximaAbertura = (agora) => {
+            for (let passo = 0; passo <= 7; passo++) {
+                const dia = (agora.getDay() + passo) % 7;
+                if (!horario.dias.includes(dia)) continue;
+                if (passo === 0 && agora.getHours() >= horario.inicio) continue;
+                const quando = passo === 0 ? 'hoje' : passo === 1 ? 'amanhã' : NOMES_DIA[dia];
+                return `${quando}, às ${hora(horario.inicio)}`;
+            }
+            return null;
+        };
+
+        const atualizarIndicador = () => {
+            const agora = agoraEmBrasilia();
+            const aberto = horario.dias.includes(agora.getDay())
+                && agora.getHours() >= horario.inicio && agora.getHours() < horario.fim;
+            let texto;
+            if (aberto) {
+                texto = `Comercial em atendimento agora, até as ${hora(horario.fim)}.`;
+            } else {
+                const volta = proximaAbertura(agora);
+                texto = volta
+                    ? `Comercial fora do expediente. Volta ${volta}. Deixe seu pedido agora e ele responde no próximo dia útil.`
+                    : 'Comercial fora do expediente. Deixe seu pedido e ele retorna assim que possível.';
+            }
+            txt.textContent = texto;
+            indicador.classList.toggle('is-aberto', aberto);
+            indicador.hidden = false;
+        };
+
+        atualizarIndicador();
+        setInterval(atualizarIndicador, 60000);
+    }
+
     // 7. ATUALIZAÇÃO AUTOMÁTICA DO ANO
     const yearSpan = document.getElementById('current-year');
     if (yearSpan) {

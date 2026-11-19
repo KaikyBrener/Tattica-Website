@@ -1035,3 +1035,29 @@ html.abas-ativas [data-aba]:not(.is-aba-ativa) { display: none; }
 .abas__link:hover { color: var(--white); }
 .abas__link[aria-current="true"] { background: var(--white); color: var(--navy-900); }
 .abas__link:focus-visible { outline: 2px solid var(--white); outline-offset: 2px; }
+
+/* ---------- Indicador de atendimento do Comercial ---------- */
+.atendimento {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    max-width: 52ch;
+    margin: calc(16px - clamp(40px, 5vw, 64px)) 0 clamp(24px, 3vw, 40px);
+    color: var(--on-dark);
+    font-size: .9rem;
+    line-height: 1.5;
+}
+.atendimento[hidden] { display: none; }
+.atendimento__dot {
+    flex: 0 0 auto;
+    width: 10px;
+    height: 10px;
+    margin-top: .42em;
+    border-radius: 50%;
+    background: #f5b942;
+    box-shadow: 0 0 0 4px rgba(245, 185, 66, .18);
+}
+.atendimento.is-aberto .atendimento__dot {
+    background: #3ddc84;
+    box-shadow: 0 0 0 4px rgba(61, 220, 132, .18);
+}
