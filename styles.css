@@ -1026,3 +1026,14 @@ body.quote-modal-open { overflow: hidden; }
 .legal__meta { color: var(--muted); }
 
 .footer__bottom a { display: inline-block; padding-block: 10px; text-decoration: underline; text-underline-offset: 3px; }
+
+/* Aba do aplicativo: benefícios no dia a dia */
+.app-extra { margin-top: clamp(40px, 6vw, 72px); display: grid; gap: 40px; }
+.app-extra h3 { margin-bottom: 20px; }
+.app-cards { list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 16px; }
+.app-cards li { display: flex; gap: 14px; align-items: flex-start; padding: 20px; background: var(--white); border-radius: 14px; }
+.app-cards .icon { width: 26px; height: 26px; margin-top: 2px; color: var(--blue-700); }
+.app-cards strong { display: block; color: var(--ink); margin-bottom: 4px; }
+.app-cards span { color: var(--muted); font-size: .95rem; line-height: 1.5; }
+.app-extra__cta { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px 32px; padding: 28px; border-radius: 16px; color: var(--white); background: var(--navy-900); }
+.app-extra__cta p { font-weight: 650; font-size: 1.15rem; max-width: 36ch; }
