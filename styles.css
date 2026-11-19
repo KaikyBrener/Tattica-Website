@@ -973,7 +973,10 @@ h3 {
 .legal li { margin-bottom: 8px; }
 .legal a { text-decoration: underline; text-underline-offset: 3px; }
 .legal__meta { color: var(--muted); }
+.legal__status { display: inline-block; margin-bottom: 12px; padding: 4px 12px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); font-size: .85rem; font-weight: 600; }
+.legal__note { padding: 16px 20px; border-radius: 12px; color: var(--ink); background: var(--blue-100); }
 
+.footer__demo { opacity: .75; white-space: nowrap; }
 .footer__bottom a { display: inline-block; padding-block: 10px; text-decoration: underline; text-underline-offset: 3px; }
 
 /* Aba do aplicativo: benefícios no dia a dia */
