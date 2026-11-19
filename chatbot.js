@@ -2,10 +2,10 @@
 (() => {
     'use strict';
     const CFG = window.TATTICA_CHAT;
+    if (!CFG) return;
     /* Em localhost, usa o proxy local da IA, se o iaUrl publicado estiver vazio */
     const emLocalhost = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
     if (!CFG.iaUrl && emLocalhost && CFG.iaUrlLocal) CFG.iaUrl = CFG.iaUrlLocal;
-    if (!CFG) return;
 
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const wait = (ms) => new Promise(res => setTimeout(res, reduceMotion ? 0 : ms));
@@ -86,6 +86,8 @@
 
     let token = 0;               // muda ao recomeçar: interrompe fluxos antigos
     let started = false;
+    let fluxo = '';              // fluxo em andamento ('orcamento' ou vazio)
+    let origemOrcamento = '';    // seção do site cujo botão abriu o orçamento
     class Cancel extends Error {}
 
     const scrollEnd = () => log.scrollTo({ top: log.scrollHeight, behavior: reduceMotion ? 'auto' : 'smooth' });
@@ -323,6 +325,8 @@
 
     /* ---------- Fluxos ---------- */
     async function menu(tok, intro = true) {
+        fluxo = '';
+        origemOrcamento = '';
         if (intro) await say(tok, 'Oi! 👋 Eu sou o assistente virtual da Tattica.', 'Como posso ajudar você hoje?');
         const escolha = await choose(tok, [
             'Quero contratar ou pedir orçamento',
@@ -465,10 +469,13 @@
     }
 
     /* ---------- Orçamento: qualifica e entrega ao Comercial ---------- */
-    async function orcamento(tok) {
+    async function orcamento(tok, direto = false) {
         const lead = {};
-        await say(tok, 'Ótimo! Vou fazer algumas perguntas rápidas para o Comercial já chegar preparado. Leva cerca de 1 minuto.');
-        m('orc_inicio');
+        fluxo = 'orcamento';
+        await say(tok, direto
+            ? 'Oi! Eu sou o assistente virtual da Tattica. Vou fazer algumas perguntas rápidas para preparar o seu orçamento.'
+            : 'Ótimo! Vou fazer algumas perguntas rápidas para o Comercial já chegar preparado.');
+        m('orc_inicio', origemOrcamento || 'menu');
         m('orc_passo', 'perfil');
         await say(tok, 'Quem é você?');
         lead.perfil = (await choose(tok, ['Síndico', 'Administradora', 'Morador (quero indicar)', 'Outro'])).label;
@@ -503,11 +510,11 @@
         m('orc_passo', 'autorizacao');
         await say(tok, 'Posso enviar estes dados ao Comercial da Tattica? Eles usam só para retornar o seu contato. Não envie documentos por aqui.');
         const ok = await choose(tok, ['Autorizo e quero enviar', { label: 'Ler a política de privacidade', href: 'privacidade.html' }, 'Cancelar']);
-        if (ok.label === 'Cancelar') { m('orc_cancelado'); await say(tok, 'Tudo bem, nada foi enviado.'); return menu(tok, false); }
+        if (ok.label === 'Cancelar') { m('orc_cancelado'); fluxo = ''; await say(tok, 'Tudo bem, nada foi enviado.'); return menu(tok, false); }
 
         lead.prioridade = lead.assembleia.startsWith('Sim') ? 'Alta' : lead.assembleia.startsWith('Vamos') ? 'Média' : 'Normal';
         lead.consentimento = 'Sim';
-        lead.origem = location.pathname;
+        lead.origem = location.pathname + (origemOrcamento ? '#' + origemOrcamento : '');
         lead.criadoEm = new Date().toISOString();
 
         let situacao = await registrarPedido(lead);
@@ -541,6 +548,8 @@
         await say(tok, lead.pontos.length
             ? 'Pontos que o Comercial vai avaliar com vocês: ' + lead.pontos.join('; ') + '.'
             : 'Pela sua resposta, não há pendências a avaliar agora. O Comercial confirma os detalhes na proposta.');
+        fluxo = '';
+        origemOrcamento = '';
         let resumoFeito = false;
         for (;;) {
             const r = await choose(tok, [
@@ -612,15 +621,23 @@
     }
     hint.addEventListener('click', () => { m('balao_clique'); hideHint(); open(); });
 
-    function open() {
+    function open(opcoes = {}) {
         hideHint();
+        const jaAberto = !panel.hidden;
         panel.classList.remove('is-closing');
         panel.hidden = false;
         launcher.setAttribute('aria-expanded', 'true');
         launcher.hidden = true;
         document.body.classList.add('chat-open');
         m('chat_aberto', dentroDoHorario() ? 'no horário' : 'fora do horário');
-        if (!started) { started = true; run(menu); }
+        if (opcoes.orcamento && !(jaAberto && fluxo === 'orcamento')) {
+            /* Botão "Solicitar orçamento" do site: vai direto ao fluxo de orçamento (o mesmo do menu) */
+            started = true;
+            origemOrcamento = String(opcoes.origem || '').replace(/[^\w-]/g, '').slice(0, 40);
+            m('cta_orcamento', origemOrcamento);
+            const origem = origemOrcamento;
+            run(tok => { origemOrcamento = origem; return orcamento(tok, true); });
+        } else if (!started) { started = true; run(menu); }
         panel.querySelector('button, input, a')?.focus({ preventScroll: true });
     }
     function close() {
@@ -637,7 +654,10 @@
         panel.addEventListener('animationend', finish, { once: true });
     }
 
-    launcher.addEventListener('click', open);
+    launcher.addEventListener('click', () => open());
+
+    /* Usado pelos botões de orçamento do site (script.js) */
+    window.TatticaChat = { abrirOrcamento: (origem) => open({ orcamento: true, origem }) };
     root.querySelector('[data-chat-close]').addEventListener('click', close);
     const restartBtn = root.querySelector('[data-chat-restart]');
     restartBtn.addEventListener('click', () => {

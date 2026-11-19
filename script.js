@@ -122,84 +122,17 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 6. MODAL DE SOLICITAÇÃO DE ORÇAMENTO
-    const quoteModal = document.getElementById('orcamento-modal');
-    const quoteForm = document.getElementById('quote-form');
-    const quoteTriggers = document.querySelectorAll('.quote-trigger');
-    const quoteCloseButtons = quoteModal ? quoteModal.querySelectorAll('[data-quote-close]') : [];
-    const quotePhone = document.getElementById('quote-phone');
-    let lastQuoteTrigger;
-
-    const formatPhone = (value) => {
-        const digits = value.replace(/\D/g, '').slice(0, 11);
-        if (digits.length <= 2) return digits.length ? `(${digits}` : '';
-        if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
-        return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
-    };
-
-    const closeQuoteModal = () => {
-        if (!quoteModal) return;
-        quoteModal.hidden = true;
-        document.body.classList.remove('quote-modal-open');
-        lastQuoteTrigger?.focus();
-    };
-
-    if (quoteModal && quoteForm) {
-        quoteTriggers.forEach(trigger => {
-            trigger.addEventListener('click', (event) => {
-                event.preventDefault();
-                closeMenu();
-                lastQuoteTrigger = trigger;
-                quoteModal.hidden = false;
-                document.body.classList.add('quote-modal-open');
-                document.getElementById('quote-name').focus();
-            });
-        });
-
-        quoteCloseButtons.forEach(button => button.addEventListener('click', closeQuoteModal));
-        quotePhone?.addEventListener('input', () => {
-            quotePhone.value = formatPhone(quotePhone.value);
-        });
-
-        quoteForm.addEventListener('submit', (event) => {
+    // 6. BOTÕES DE ORÇAMENTO: abrem o assistente direto no fluxo de orçamento (chatbot.js)
+    // Sem o assistente (JavaScript bloqueado ou falha ao carregar), o link segue para o WhatsApp.
+    document.querySelectorAll('.quote-trigger').forEach((botao) => {
+        botao.addEventListener('click', (event) => {
+            if (!window.TatticaChat) return;
             event.preventDefault();
-            if (!quoteForm.reportValidity()) return;
-
-            const formData = new FormData(quoteForm);
-            const message = [
-                'Olá! Desejo solicitar um orçamento.',
-                '',
-                `Nome: ${formData.get('nome')}`,
-                `E-mail: ${formData.get('email')}`,
-                `Telefone: ${formData.get('telefone')}`
-            ].join('\n');
-            const whatsappUrl = `https://wa.me/552730262196?text=${encodeURIComponent(message)}`;
-            window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
-            closeQuoteModal();
-            quoteForm.reset();
+            closeMenu();
+            const origem = botao.dataset.origem || botao.closest('section[id]')?.id || 'cabecalho';
+            window.TatticaChat.abrirOrcamento(origem);
         });
-
-        document.addEventListener('keydown', (event) => {
-            if (quoteModal.hidden) return;
-            if (event.key === 'Escape') {
-                closeQuoteModal();
-                return;
-            }
-            if (event.key !== 'Tab') return;
-
-            // Mantém o foco dentro do modal enquanto ele está aberto
-            const focusable = quoteModal.querySelectorAll('button, input, a[href]');
-            const first = focusable[0];
-            const last = focusable[focusable.length - 1];
-            if (event.shiftKey && document.activeElement === first) {
-                event.preventDefault();
-                last.focus();
-            } else if (!event.shiftKey && document.activeElement === last) {
-                event.preventDefault();
-                first.focus();
-            }
-        });
-    }
+    });
 
     // 7. ATUALIZAÇÃO AUTOMÁTICA DO ANO
     const yearSpan = document.getElementById('current-year');

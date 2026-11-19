@@ -6,7 +6,7 @@ Site institucional estático da Tattica (portaria virtual, Espírito Santo): apr
 
 - `index.html` — página única, em seções. Os ícones ficam em um sprite SVG no início do `<body>`.
 - `styles.css` — sistema de design do site (tokens em `:root`, componentes e responsivo).
-- `script.js` — menu responsivo, cabeçalho, link ativo da navegação, FAQ, botão de voltar ao topo, ano do rodapé e modal/formulário de orçamento (envia pelo WhatsApp).
+- `script.js` — menu responsivo, cabeçalho, link ativo da navegação, FAQ, botão de voltar ao topo, ano do rodapé e botões de orçamento, que abrem o assistente direto no fluxo de orçamento (sem JavaScript, o link vai para o WhatsApp).
 - `privacidade.html` — página de privacidade e LGPD (reaproveita o `styles.css`). Revisar com o jurídico antes de publicar: prazo de guarda e e-mail do encarregado.
 - `images/` — fotos, telas do aplicativo, logotipo e favicon.
   - `central-operacao.jpg` e `Celular*.jpeg` são os originais; o site usa as versões `.webp` geradas a partir deles.
