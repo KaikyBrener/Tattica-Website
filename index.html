@@ -217,8 +217,19 @@
             </div>
         </section>
 
+        <!-- ABAS (só aparecem no celular, com JavaScript; sem JavaScript a página inteira continua visível) -->
+        <nav class="abas" id="abas" aria-label="Seções do site" hidden>
+            <ul class="abas__lista">
+                <li><a href="#apresentacao" class="abas__link" data-aba-link="portaria">Portaria</a></li>
+                <li><a href="#solucoes" class="abas__link" data-aba-link="solucoes">Soluções</a></li>
+                <li><a href="#tattica-center" class="abas__link" data-aba-link="app">Aplicativo</a></li>
+                <li><a href="#central" class="abas__link" data-aba-link="central">Central</a></li>
+                <li><a href="#faq" class="abas__link" data-aba-link="faq">FAQ</a></li>
+            </ul>
+        </nav>
+
         <!-- 3. APRESENTAÇÃO -->
-        <section id="apresentacao" class="section section--white" aria-labelledby="apresentacao-title">
+        <section id="apresentacao" data-aba="portaria" class="section section--white" aria-labelledby="apresentacao-title">
             <div class="container split">
                 <div class="split__lead">
                     <h2 id="apresentacao-title">Uma central que atende o seu condomínio 24 horas por dia.</h2>
@@ -251,7 +262,7 @@
         </section>
 
         <!-- 4. SOLUÇÕES -->
-        <section id="solucoes" class="section section--paper" aria-labelledby="solucoes-title">
+        <section id="solucoes" data-aba="solucoes" class="section section--paper" aria-labelledby="solucoes-title">
             <div class="container split split--sticky">
                 <div class="split__lead">
                     <h2 id="solucoes-title">Três frentes de proteção, operadas pela mesma equipe.</h2>
@@ -286,7 +297,7 @@
         </section>
 
         <!-- 4.1 COMO FUNCIONA -->
-        <section id="como-funciona" class="section section--white" aria-labelledby="como-title">
+        <section id="como-funciona" data-aba="portaria" class="section section--white" aria-labelledby="como-title">
             <div class="container">
                 <header class="section-head">
                     <h2 id="como-title">Como a portaria virtual atende um visitante.</h2>
@@ -335,7 +346,7 @@
         </section>
 
         <!-- 5. TATTICA CENTER -->
-        <section id="tattica-center" class="section section--app" aria-labelledby="app-title">
+        <section id="tattica-center" data-aba="app" class="section section--app" aria-labelledby="app-title">
             <div class="container app">
                 <div class="app__copy">
                     <h2 id="app-title">Tattica Center, o aplicativo do condomínio.</h2>
@@ -392,7 +403,7 @@
         </section>
 
         <!-- 6. EQUIPAMENTOS E TECNOLOGIA -->
-        <section id="tecnologia" class="section section--white" aria-labelledby="tec-title">
+        <section id="tecnologia" data-aba="solucoes" class="section section--white" aria-labelledby="tec-title">
             <div class="container split">
                 <div class="split__lead">
                     <h2 id="tec-title">Equipamentos e tecnologia da operação.</h2>
@@ -431,7 +442,7 @@
 
         <!-- 6b. TORRE DE VIGILÂNCIA -->
         <!-- Confirmar com a Tattica antes de publicar: alcance das câmeras e energia de backup da torre. -->
-        <section id="torre" class="section section--paper" aria-labelledby="torre-title">
+        <section id="torre" data-aba="solucoes" class="section section--paper" aria-labelledby="torre-title">
             <div class="container torre">
                 <figure class="torre__stage">
                     <div class="torre__figure">
@@ -490,7 +501,7 @@
         </section>
 
         <!-- 7. CENTRAL DE MONITORAMENTO -->
-        <section id="central" class="section section--dark" aria-labelledby="central-title">
+        <section id="central" data-aba="central" class="section section--dark" aria-labelledby="central-title">
             <div class="container central">
                 <figure class="central__media">
                     <div class="viewfinder">
@@ -513,7 +524,7 @@
         </section>
 
         <!-- 8. BENEFÍCIOS PARA CONDOMÍNIOS -->
-        <section id="beneficios" class="section section--paper" aria-labelledby="beneficios-title">
+        <section id="beneficios" data-aba="portaria" class="section section--paper" aria-labelledby="beneficios-title">
             <div class="container split">
                 <div class="split__lead">
                     <h2 id="beneficios-title">O que o condomínio ganha com a portaria virtual.</h2>
@@ -546,7 +557,7 @@
         </section>
 
         <!-- 9. CREDIBILIDADE E DIFERENCIAIS -->
-        <section id="diferenciais" class="section section--white" aria-labelledby="dif-title">
+        <section id="diferenciais" data-aba="central" class="section section--white" aria-labelledby="dif-title">
             <div class="container">
                 <header class="section-head">
                     <h2 id="dif-title">Por que escolher a Tattica.</h2>
@@ -587,7 +598,7 @@
         </section>
 
         <!-- 10. FAQ -->
-        <section id="faq" class="section section--paper" aria-labelledby="faq-title">
+        <section id="faq" data-aba="faq" class="section section--paper" aria-labelledby="faq-title">
             <div class="container split">
                 <div class="split__lead">
                     <h2 id="faq-title">Perguntas frequentes.</h2>
