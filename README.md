@@ -22,6 +22,11 @@ python3 -m http.server 8000
 
 ---
 
+## Página no celular, indicador de atendimento e comparativo
+- **Abas no celular (até 767 px):** a página mostra um grupo de seções por vez (Portaria, Soluções, Aplicativo, Central e FAQ). O grupo de cada seção é o atributo `data-aba` no `index.html`, e a barra de abas é o `<nav id="abas">`. Cada seção mantém o endereço (`#torre`, `#faq`...), então links, menu e botão voltar funcionam. No computador, ou sem JavaScript, a página continua inteira, rolando como sempre.
+- **Indicador de atendimento:** no topo do site, mostra se o Comercial está em atendimento ou fora do expediente e quando volta. Usa `horarioComercial` do `chat-config.js` (o mesmo do chat) no fuso de Brasília. **Não considera feriados.** Confirmar o horário real com o Comercial.
+- **Comparativo portaria presencial × virtual:** seção `#comparativo`, tabela no computador e cartões no celular. São argumentos gerais, sem números. **Cada linha precisa ser validada pelo Comercial antes do uso real.**
+
 ## Demonstração: assistente virtual (chat) — projeto pessoal
 
 
