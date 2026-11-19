@@ -128,6 +128,46 @@
         return el;
     }
 
+    /* Cartão de prévia (o que o Comercial recebe). Só textContent: nada digitado vira HTML. */
+    function addCartao({ titulo, selo, campos = [], texto = '', botao = '' }) {
+        const el = document.createElement('div');
+        el.className = 'chat__msg chat__msg--bot chat__card is-written';
+        const cab = document.createElement('p');
+        cab.className = 'chat__card-title';
+        cab.textContent = titulo;
+        const tag = document.createElement('span');
+        tag.className = 'chat__card-tag';
+        tag.textContent = selo;
+        el.append(cab, tag);
+        if (campos.length) {
+            const dl = document.createElement('dl');
+            dl.className = 'chat__card-fields';
+            campos.forEach(([k, v]) => {
+                const dt = document.createElement('dt'); dt.textContent = k;
+                const dd = document.createElement('dd'); dd.textContent = v;
+                dl.append(dt, dd);
+            });
+            el.appendChild(dl);
+        }
+        if (texto) {
+            const pre = document.createElement('p');
+            pre.className = 'chat__card-text';
+            pre.textContent = texto;
+            el.appendChild(pre);
+        }
+        if (botao) {
+            const b = document.createElement('span');
+            b.className = 'chat__card-btn';
+            b.setAttribute('aria-hidden', 'true');
+            b.textContent = botao;
+            el.appendChild(b);
+        }
+        el.dataset.time = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' });
+        log.appendChild(el);
+        scrollEnd();
+        return el;
+    }
+
     /* Quebra respostas longas em mensagens curtas, como uma pessoa faria no chat */
     function pedacos(texto) {
         const paragrafos = texto.split(/\n\n+/);
@@ -562,7 +602,45 @@
         return finalizarOrcamento(tok, lead, [{ label: 'Enviar ao Comercial pelo WhatsApp', href: wa(texto) }]);
     }
 
-    /* Modo demonstração: nada sai do navegador. Mostra o fim do atendimento deixando claro que foi simulado. */
+    /* Mesmos prazos do lembrete do apps-script/Code.gs (horas úteis sem contato) */
+    const PRAZO_LEMBRETE = { 'Alta': 2, 'Média': 4, 'Normal': 8 };
+
+    /* Mostra, em cartões, o que o Comercial recebe com este pedido: e-mail, linha da planilha e WhatsApp.
+       selos: { envio } diz se aquilo foi de fato enviado (teste) ou é só prévia (demonstração). */
+    async function mostrarRecebimento(tok, lead, selos) {
+        const agora = new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Sao_Paulo' });
+        const blocos = lead.blocos === '1' ? '1 bloco' : `${lead.blocos} blocos`;
+        const pontos = lead.pontos.length ? lead.pontos.join('; ') : 'nenhum';
+        const passo = async (fn) => { await wait(RITMO.pausa); alive(tok); fn(); };
+        await passo(() => addCartao({
+            titulo: 'E-mail para o Comercial',
+            selo: selos.envio,
+            campos: [
+                ['Assunto', `[${lead.prioridade}] Novo pedido de orçamento: ${lead.nome}`],
+                ['Telefone', lead.telefone], ['Perfil', lead.perfil], ['Local', lead.local],
+                ['Porte', `${blocos}, cerca de ${lead.unidades} unidades`], ['Portaria atual', lead.portaria],
+                ['Assembleia', lead.assembleia], ['Pontos a avaliar', pontos]
+            ],
+            botao: 'Chamar no WhatsApp'
+        }));
+        await passo(() => addCartao({
+            titulo: 'Nova linha na planilha Pedidos',
+            selo: selos.envio,
+            campos: [
+                ['Data e hora', agora], ['Prioridade', lead.prioridade], ['Nome', lead.nome],
+                ['Telefone', lead.telefone], ['Local', lead.local], ['Status', 'Novo'], ['Origem', lead.origem]
+            ]
+        }));
+        await passo(() => addCartao({
+            titulo: 'Mensagem pronta para o WhatsApp do Comercial',
+            selo: selos.whatsapp,
+            texto: mensagemComercial(lead).replace(/\*/g, '') // sem os asteriscos de negrito do WhatsApp
+        }));
+        const prazo = PRAZO_LEMBRETE[lead.prioridade] || PRAZO_LEMBRETE['Normal'];
+        await say(tok, `Depois disso, o pedido aparece no Painel da planilha. Se o status continuar em "Novo" por mais de ${prazo} h úteis (prioridade ${lead.prioridade}), o Comercial recebe um lembrete por e-mail a cada 30 minutos, no expediente.`);
+    }
+
+    /* Modo demonstração: nada sai do navegador. Mostra o que o Comercial receberia, deixando claro que é prévia. */
     async function concluirSimulacao(tok, lead) {
         setStatus('digitando…');
         const typing = addTyping();
@@ -572,10 +650,8 @@
         setStatus('Online');
         m('orc_resultado', 'simulado');
         await say(tok, 'Simulação concluída. Esta solicitação NÃO foi enviada: nenhum dado saiu do seu navegador.');
-        await say(tok, 'Na versão real, o pedido iria para o Comercial da Tattica, que retornaria o contato pelo WhatsApp.');
-        await say(tok, lead.pontos.length
-            ? 'Pontos que o Comercial avaliaria com vocês: ' + lead.pontos.join('; ') + '.'
-            : 'Pela sua resposta, não haveria pendências a avaliar agora.');
+        await say(tok, 'Veja o que o Comercial da Tattica receberia com este pedido:');
+        await mostrarRecebimento(tok, lead, { envio: 'Prévia · nada foi enviado', whatsapp: 'Prévia · nada foi enviado' });
         return finalizarOrcamento(tok, lead, []);
     }
 
