@@ -7,6 +7,12 @@
 window.TATTICA_CHAT = {
     nomeAssistente: 'Assistente Tattica',
 
+    /* MODO DO SITE
+       'demonstracao' = MVP: o chat funciona inteiro, mas NADA sai do navegador. Não grava na planilha,
+                        não envia e-mail, não manda métricas e não usa a IA. O fim do orçamento avisa que foi simulado.
+       'producao'     = usa o appsScriptUrl (planilha, e-mail ao Comercial, lembretes e métricas) e o iaUrl, se houver. */
+    modo: 'demonstracao',
+
     /* Ritmo de "digitação" do bot, em milissegundos. Aumente para um jeito mais calmo. */
     digitacao: { pausa: 450, base: 700, porCaractere: 16, max: 2400 },
 

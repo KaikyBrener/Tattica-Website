@@ -6,6 +6,10 @@
     /* Em localhost, usa o proxy local da IA, se o iaUrl publicado estiver vazio */
     const emLocalhost = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
     if (!CFG.iaUrl && emLocalhost && CFG.iaUrlLocal) CFG.iaUrl = CFG.iaUrlLocal;
+    /* Modo demonstração (chat-config.js): o chat funciona inteiro, mas nada é enviado ao Apps Script
+       (nem pedidos, nem métricas). Para usar a planilha de verdade, troque modo para 'producao'. */
+    const DEMO = CFG.modo !== 'producao';
+    if (DEMO) CFG.iaUrl = '';
 
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const wait = (ms) => new Promise(res => setTimeout(res, reduceMotion ? 0 : ms));
@@ -63,7 +67,7 @@
     let filaTimer;
     function enviarFila() {
         clearTimeout(filaTimer);
-        if (!fila.length || !CFG.appsScriptUrl) { fila = []; return; }
+        if (DEMO || !fila.length || !CFG.appsScriptUrl) { fila = []; return; }
         const corpo = JSON.stringify({ tipo: 'eventos', sessao, eventos: fila });
         fila = [];
         try {
@@ -74,7 +78,7 @@
         } catch (_) { /* métrica nunca pode atrapalhar o chat */ }
     }
     function m(evento, detalhe = '') {
-        if (!CFG.appsScriptUrl || CFG.metricas === false) return;
+        if (DEMO || !CFG.appsScriptUrl || CFG.metricas === false) return;
         fila.push({ evento, detalhe: String(detalhe).slice(0, 80), quando: new Date().toISOString() });
         if (fila.length >= 8) return enviarFila();
         clearTimeout(filaTimer);
@@ -475,6 +479,7 @@
         await say(tok, direto
             ? 'Oi! Eu sou o assistente virtual da Tattica. Vou fazer algumas perguntas rápidas para preparar o seu orçamento.'
             : 'Ótimo! Vou fazer algumas perguntas rápidas para o Comercial já chegar preparado.');
+        if (DEMO) await say(tok, 'Esta é uma versão de demonstração: as suas respostas não serão enviadas a ninguém.');
         m('orc_inicio', origemOrcamento || 'menu');
         m('orc_passo', 'perfil');
         await say(tok, 'Quem é você?');
@@ -508,14 +513,20 @@
         lead.telefone = await ask(tok, 'Qual o seu telefone ou WhatsApp?', 'phone');
 
         m('orc_passo', 'autorizacao');
-        await say(tok, 'Posso enviar estes dados ao Comercial da Tattica? Eles usam só para retornar o seu contato. Não envie documentos por aqui.');
-        const ok = await choose(tok, ['Autorizo e quero enviar', { label: 'Ler a política de privacidade', href: 'privacidade.html' }, 'Cancelar']);
+        if (DEMO) {
+            await say(tok, 'Tudo pronto para concluir a simulação. Como é uma demonstração, nada será enviado ao Comercial.');
+        } else {
+            await say(tok, 'Posso enviar estes dados ao Comercial da Tattica? Eles usam só para retornar o seu contato. Não envie documentos por aqui.');
+        }
+        const ok = await choose(tok, [DEMO ? 'Concluir a simulação' : 'Autorizo e quero enviar', { label: 'Ler a política de privacidade', href: 'privacidade.html' }, 'Cancelar']);
         if (ok.label === 'Cancelar') { m('orc_cancelado'); fluxo = ''; await say(tok, 'Tudo bem, nada foi enviado.'); return menu(tok, false); }
 
         lead.prioridade = lead.assembleia.startsWith('Sim') ? 'Alta' : lead.assembleia.startsWith('Vamos') ? 'Média' : 'Normal';
         lead.consentimento = 'Sim';
         lead.origem = location.pathname + (origemOrcamento ? '#' + origemOrcamento : '');
         lead.criadoEm = new Date().toISOString();
+
+        if (DEMO) return concluirSimulacao(tok, lead);
 
         let situacao = await registrarPedido(lead);
         alive(tok);
@@ -548,12 +559,33 @@
         await say(tok, lead.pontos.length
             ? 'Pontos que o Comercial vai avaliar com vocês: ' + lead.pontos.join('; ') + '.'
             : 'Pela sua resposta, não há pendências a avaliar agora. O Comercial confirma os detalhes na proposta.');
+        return finalizarOrcamento(tok, lead, [{ label: 'Enviar ao Comercial pelo WhatsApp', href: wa(texto) }]);
+    }
+
+    /* Modo demonstração: nada sai do navegador. Mostra o fim do atendimento deixando claro que foi simulado. */
+    async function concluirSimulacao(tok, lead) {
+        setStatus('digitando…');
+        const typing = addTyping();
+        await wait(700);
+        alive(tok);
+        typing.remove();
+        setStatus('Online');
+        m('orc_resultado', 'simulado');
+        await say(tok, 'Simulação concluída. Esta solicitação NÃO foi enviada: nenhum dado saiu do seu navegador.');
+        await say(tok, 'Na versão real, o pedido iria para o Comercial da Tattica, que retornaria o contato pelo WhatsApp.');
+        await say(tok, lead.pontos.length
+            ? 'Pontos que o Comercial avaliaria com vocês: ' + lead.pontos.join('; ') + '.'
+            : 'Pela sua resposta, não haveria pendências a avaliar agora.');
+        return finalizarOrcamento(tok, lead, []);
+    }
+
+    async function finalizarOrcamento(tok, lead, acoes) {
         fluxo = '';
         origemOrcamento = '';
         let resumoFeito = false;
         for (;;) {
             const r = await choose(tok, [
-                { label: 'Enviar ao Comercial pelo WhatsApp', href: wa(texto) },
+                ...acoes,
                 ...(resumoFeito ? [] : ['Copiar resumo para a assembleia']),
                 'Voltar ao início'
             ]);
@@ -572,7 +604,7 @@
        Retorna 'confirmado', 'falhou' ou 'sem-planilha' (quando não há script configurado).
        O Content-Type text/plain evita a verificação prévia (preflight) do navegador. */
     async function registrarPedido(lead) {
-        if (!CFG.appsScriptUrl) return 'sem-planilha';
+        if (DEMO || !CFG.appsScriptUrl) return 'sem-planilha';
         const ctrl = new AbortController();
         const timer = setTimeout(() => ctrl.abort(), 20000);
         try {
