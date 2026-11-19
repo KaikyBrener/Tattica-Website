@@ -30,6 +30,15 @@ python3 -m http.server 8000
 - `chatbot.css` — visual, usando as cores e fontes do site.
 - `apps-script/Code.gs` — opcional e gratuito: registra cada pedido em uma planilha do Google, avisa por e-mail e cria um botão "Chamar no WhatsApp" para cada cliente.
 
+### Modo demonstração (MVP)
+O site está em `modo: 'demonstracao'` (topo do `chat-config.js`). Nesse modo:
+- todos os botões de orçamento abrem o chat direto no fluxo de orçamento, e o fluxo funciona até o fim;
+- nada sai do navegador: não grava na planilha, não envia e-mail, não manda métricas e não usa a IA;
+- o fim do orçamento avisa que a solicitação foi **simulada e não enviada**, e não oferece o envio ao WhatsApp do Comercial;
+- o rodapé mostra "Versão de demonstração" e a política de privacidade mostra "Documento em revisão".
+
+Para ligar o envio real, troque para `modo: 'producao'`. A integração com o Apps Script continua no código, só fica desligada na demonstração.
+
 ### Como o pedido chega ao Comercial
 1. O chat faz perguntas curtas (perfil, blocos, unidades, portaria atual, estrutura, internet de fibra, cabeamento do interfone, local, assembleia, nome e telefone) e pede o consentimento. No fim, mostra os pontos que o Comercial vai avaliar e oferece um resumo para levar à assembleia.
 2. O cliente toca em "Enviar ao Comercial pelo WhatsApp" e a conversa abre com tudo já escrito.
@@ -58,4 +67,5 @@ Com `iaUrl` preenchido em `chat-config.js`, aparece a opção "Digitar a minha p
 - Não guarda dados no site.
 
 ### Antes de qualquer uso real
+Trocar `modo` para `'producao'` em `chat-config.js`, tirar os avisos de demonstração (`footer__demo` no `index.html` e na `privacidade.html`, `legal__status` e `legal__note` na privacidade) e publicar o Apps Script numa conta Google da Tattica.
 Trocar `whatsappComercial` pelo número do Comercial, revisar todas as respostas em `chat-config.js` com a gerência e definir a resposta oficial para perguntas sobre reputação da empresa.
