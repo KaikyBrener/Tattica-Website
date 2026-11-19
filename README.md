@@ -34,8 +34,15 @@ python3 -m http.server 8000
 O site está em `modo: 'demonstracao'` (topo do `chat-config.js`). Nesse modo:
 - todos os botões de orçamento abrem o chat direto no fluxo de orçamento, e o fluxo funciona até o fim;
 - nada sai do navegador: não grava na planilha, não envia e-mail, não manda métricas e não usa a IA;
-- o fim do orçamento avisa que a solicitação foi **simulada e não enviada**, e não oferece o envio ao WhatsApp do Comercial;
+- o fim do orçamento avisa que a solicitação foi **simulada e não enviada** e mostra, em cartões marcados como prévia, o e-mail, a linha da planilha e a mensagem de WhatsApp que o Comercial receberia. O envio ao WhatsApp do Comercial não é oferecido;
 - o rodapé mostra "Versão de demonstração" e a política de privacidade mostra "Documento em revisão".
+
+Para apresentar o fluxo funcionando de verdade, use `modo: 'homologacao'`:
+1. Crie uma planilha só de teste, cole nela o `apps-script/Code.gs` com `EMAIL_DESTINO` de teste, rode `configurarTudo` e `instalarGatilhos` e publique como app da Web.
+2. Cole a URL em `appsScriptUrlTeste` no `chat-config.js`.
+3. Use dados fictícios. O pedido cai na planilha de teste, o e-mail chega com `[TESTE]` no assunto, o lembrete e o painel funcionam, e o chat mostra o que chegou. O WhatsApp do Comercial não é aberto.
+
+Sem `appsScriptUrlTeste`, a homologação volta a ser demonstração e nunca usa a planilha real.
 
 Para ligar o envio real, troque para `modo: 'producao'`. A integração com o Apps Script continua no código, só fica desligada na demonstração.
 
