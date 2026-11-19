@@ -6,10 +6,18 @@
     /* Em localhost, usa o proxy local da IA, se o iaUrl publicado estiver vazio */
     const emLocalhost = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
     if (!CFG.iaUrl && emLocalhost && CFG.iaUrlLocal) CFG.iaUrl = CFG.iaUrlLocal;
-    /* Modo demonstração (chat-config.js): o chat funciona inteiro, mas nada é enviado ao Apps Script
-       (nem pedidos, nem métricas). Para usar a planilha de verdade, troque modo para 'producao'. */
-    const DEMO = CFG.modo !== 'producao';
-    if (DEMO) CFG.iaUrl = '';
+    /* Modo do site (chat-config.js):
+       'demonstracao' = nada sai do navegador; o fim do orçamento mostra uma prévia do que o Comercial receberia.
+       'homologacao'  = envia de verdade, mas só para a planilha de TESTE (appsScriptUrlTeste), com dados fictícios.
+       'producao'     = envia para a planilha real (appsScriptUrl).
+       Sem appsScriptUrlTeste, a homologação volta a ser demonstração: nunca cai na planilha real por engano. */
+    const MODO = CFG.modo === 'producao' ? 'producao'
+        : (CFG.modo === 'homologacao' && /^https:\/\//.test(CFG.appsScriptUrlTeste || '')) ? 'homologacao'
+        : 'demonstracao';
+    const DEMO = MODO === 'demonstracao';
+    const TESTE = MODO === 'homologacao';
+    const URL_SCRIPT = MODO === 'producao' ? CFG.appsScriptUrl : TESTE ? CFG.appsScriptUrlTeste : '';
+    if (MODO !== 'producao') CFG.iaUrl = '';
 
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const wait = (ms) => new Promise(res => setTimeout(res, reduceMotion ? 0 : ms));
@@ -67,18 +75,18 @@
     let filaTimer;
     function enviarFila() {
         clearTimeout(filaTimer);
-        if (DEMO || !fila.length || !CFG.appsScriptUrl) { fila = []; return; }
+        if (!fila.length || !URL_SCRIPT) { fila = []; return; }
         const corpo = JSON.stringify({ tipo: 'eventos', sessao, eventos: fila });
         fila = [];
         try {
             const blob = new Blob([corpo], { type: 'text/plain;charset=utf-8' });
-            if (!(navigator.sendBeacon && navigator.sendBeacon(CFG.appsScriptUrl, blob))) {
-                fetch(CFG.appsScriptUrl, { method: 'POST', body: corpo, headers: { 'Content-Type': 'text/plain;charset=utf-8' }, keepalive: true, mode: 'no-cors' }).catch(() => {});
+            if (!(navigator.sendBeacon && navigator.sendBeacon(URL_SCRIPT, blob))) {
+                fetch(URL_SCRIPT, { method: 'POST', body: corpo, headers: { 'Content-Type': 'text/plain;charset=utf-8' }, keepalive: true, mode: 'no-cors' }).catch(() => {});
             }
         } catch (_) { /* métrica nunca pode atrapalhar o chat */ }
     }
     function m(evento, detalhe = '') {
-        if (DEMO || !CFG.appsScriptUrl || CFG.metricas === false) return;
+        if (!URL_SCRIPT || CFG.metricas === false) return;
         fila.push({ evento, detalhe: String(detalhe).slice(0, 80), quando: new Date().toISOString() });
         if (fila.length >= 8) return enviarFila();
         clearTimeout(filaTimer);
@@ -520,6 +528,7 @@
             ? 'Oi! Eu sou o assistente virtual da Tattica. Vou fazer algumas perguntas rápidas para preparar o seu orçamento.'
             : 'Ótimo! Vou fazer algumas perguntas rápidas para o Comercial já chegar preparado.');
         if (DEMO) await say(tok, 'Esta é uma versão de demonstração: as suas respostas não serão enviadas a ninguém.');
+        if (TESTE) await say(tok, 'Ambiente de teste: o pedido vai para uma planilha de demonstração, e não para o Comercial. Use dados fictícios.');
         m('orc_inicio', origemOrcamento || 'menu');
         m('orc_passo', 'perfil');
         await say(tok, 'Quem é você?');
@@ -555,18 +564,22 @@
         m('orc_passo', 'autorizacao');
         if (DEMO) {
             await say(tok, 'Tudo pronto para concluir a simulação. Como é uma demonstração, nada será enviado ao Comercial.');
+        } else if (TESTE) {
+            await say(tok, 'Posso registrar este pedido de teste na planilha de demonstração?');
         } else {
             await say(tok, 'Posso enviar estes dados ao Comercial da Tattica? Eles usam só para retornar o seu contato. Não envie documentos por aqui.');
         }
-        const ok = await choose(tok, [DEMO ? 'Concluir a simulação' : 'Autorizo e quero enviar', { label: 'Ler a política de privacidade', href: 'privacidade.html' }, 'Cancelar']);
+        const ok = await choose(tok, [DEMO ? 'Concluir a simulação' : TESTE ? 'Registrar pedido de teste' : 'Autorizo e quero enviar', { label: 'Ler a política de privacidade', href: 'privacidade.html' }, 'Cancelar']);
         if (ok.label === 'Cancelar') { m('orc_cancelado'); fluxo = ''; await say(tok, 'Tudo bem, nada foi enviado.'); return menu(tok, false); }
 
         lead.prioridade = lead.assembleia.startsWith('Sim') ? 'Alta' : lead.assembleia.startsWith('Vamos') ? 'Média' : 'Normal';
         lead.consentimento = 'Sim';
         lead.origem = location.pathname + (origemOrcamento ? '#' + origemOrcamento : '');
         lead.criadoEm = new Date().toISOString();
+        if (TESTE) lead.ambiente = 'homologacao';
 
         if (DEMO) return concluirSimulacao(tok, lead);
+        if (TESTE) return concluirTeste(tok, lead);
 
         let situacao = await registrarPedido(lead);
         alive(tok);
@@ -655,6 +668,26 @@
         return finalizarOrcamento(tok, lead, []);
     }
 
+    /* Modo homologação: envia de verdade para a planilha de teste e mostra o que chegou. Não abre o WhatsApp do Comercial. */
+    async function concluirTeste(tok, lead) {
+        for (;;) {
+            setStatus('digitando…');
+            const typing = addTyping();
+            const situacao = await registrarPedido(lead);
+            alive(tok);
+            typing.remove();
+            setStatus('Online');
+            m('orc_resultado', situacao);
+            if (situacao === 'confirmado') break;
+            await say(tok, 'Não consegui confirmar o registro na planilha de teste. Confira o appsScriptUrlTeste e se o script de teste está publicado.');
+            const r = await choose(tok, ['Tentar enviar de novo', 'Voltar ao início']);
+            if (r.label.startsWith('Voltar')) return menu(tok, false);
+        }
+        await say(tok, 'Pedido de teste registrado na planilha de demonstração. O e-mail de teste também foi enviado.');
+        await mostrarRecebimento(tok, lead, { envio: 'Enviado à planilha de teste', whatsapp: 'Prévia · no teste o WhatsApp não é aberto' });
+        return finalizarOrcamento(tok, lead, []);
+    }
+
     async function finalizarOrcamento(tok, lead, acoes) {
         fluxo = '';
         origemOrcamento = '';
@@ -680,11 +713,11 @@
        Retorna 'confirmado', 'falhou' ou 'sem-planilha' (quando não há script configurado).
        O Content-Type text/plain evita a verificação prévia (preflight) do navegador. */
     async function registrarPedido(lead) {
-        if (DEMO || !CFG.appsScriptUrl) return 'sem-planilha';
+        if (!URL_SCRIPT) return 'sem-planilha';
         const ctrl = new AbortController();
         const timer = setTimeout(() => ctrl.abort(), 20000);
         try {
-            const r = await fetch(CFG.appsScriptUrl, {
+            const r = await fetch(URL_SCRIPT, {
                 method: 'POST',
                 headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                 body: JSON.stringify(lead),

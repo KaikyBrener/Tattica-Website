@@ -9,9 +9,16 @@ window.TATTICA_CHAT = {
 
     /* MODO DO SITE
        'demonstracao' = MVP: o chat funciona inteiro, mas NADA sai do navegador. Não grava na planilha,
-                        não envia e-mail, não manda métricas e não usa a IA. O fim do orçamento avisa que foi simulado.
+                        não envia e-mail, não manda métricas e não usa a IA. No fim do orçamento, mostra
+                        uma prévia (marcada como tal) do e-mail, da linha da planilha e da mensagem de WhatsApp.
+       'homologacao'  = para apresentar ao vivo: envia de verdade, mas só para a planilha de TESTE em
+                        appsScriptUrlTeste (planilha, e-mail de teste, lembrete, painel e métricas). Use dados fictícios.
+                        Sem appsScriptUrlTeste preenchido, funciona como 'demonstracao'.
        'producao'     = usa o appsScriptUrl (planilha, e-mail ao Comercial, lembretes e métricas) e o iaUrl, se houver. */
     modo: 'demonstracao',
+
+    /* Endereço do script de uma planilha SÓ DE TESTE (cópia do apps-script/Code.gs, com EMAIL_DESTINO de teste). */
+    appsScriptUrlTeste: '',
 
     /* Ritmo de "digitação" do bot, em milissegundos. Aumente para um jeito mais calmo. */
     digitacao: { pausa: 450, base: 700, porCaractere: 16, max: 2400 },
